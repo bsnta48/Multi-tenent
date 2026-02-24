@@ -31,7 +31,7 @@ export default function SignUpPage() {
                     <input id="confirmPassword" type="password" name="confirmPassword" placeholder="Confirm your password" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
                     {state?.errors?.confirmPassword && <p className="text-red-500">{state.errors.confirmPassword[0]}</p>}
                 </div>
-                <button type="submit" className="px-4 py-2 bg-blue-500 rounded-md cursor-pointer hover:bg-blue-600">Sign Up</button>
+                <button type="submit" className="px-4 py-2 bg-blue-500 rounded-md cursor-pointer hover:bg-blue-600" disabled={isPending}>{isPending ? "Signing Up..." : "Sign Up"}</button>
             </form>
         </div>
     );
