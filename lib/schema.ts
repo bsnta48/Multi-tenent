@@ -1,0 +1,16 @@
+import { z } from "zod";
+
+export const signUpSchema = z.object({
+    username: z.string().min(3, "Username must be at least 3 characters long").regex(/^[a-zA-Z0-9]+$/, "Username must contain only letters and numbers"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters long"),
+    confirmPassword: z.string().min(6, "Confirm Password must be at least 6 characters long"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+})
+
+export const createTenentSchema = signUpSchema.extend({
+    subdomain: z.string().min(3, "Domain must be at least 3 characters long").regex(/^[a-zA-Z0-9-]+$/, "Domain must contain only letters and numbers").transform((value) => value.trim().toLowerCase().replace(/\s+/g, "-")),
+    organizationName: z.string().min(3, "Organization name must be at least 3 characters long"),
+})
