@@ -20,16 +20,19 @@ model Tenent {
 }
 
 model User {
-  id       String  @id @default(uuid())
-  username String  @unique
-  email    String  @unique
-  verified Boolean @default(false)
-  password String
-  name     String?
-  role     String  @default("member")
-  posts    Post[]
-  tenent   Tenent  @relation(fields: [tenentId], references: [id])
-  tenentId String
+  id               String    @id @default(uuid())
+  username         String    @unique
+  email            String    @unique
+  verified         Boolean   @default(false)
+  password         String
+  name             String?
+  role             String    @default("member")
+  verifyToken      String?
+  verifyCode       String?
+  verifyCodeExpiry DateTime?
+  posts            Post[]
+  tenent           Tenent    @relation(fields: [tenentId], references: [id])
+  tenentId         String
 }
 
 model Post {

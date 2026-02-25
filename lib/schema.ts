@@ -14,3 +14,20 @@ export const createTenentSchema = signUpSchema.extend({
     subdomain: z.string().min(3, "Domain must be at least 3 characters long").regex(/^[a-zA-Z0-9-]+$/, "Domain must contain only letters and numbers").transform((value) => value.trim().toLowerCase().replace(/\s+/g, "-")),
     organizationName: z.string().min(3, "Organization name must be at least 3 characters long"),
 })
+
+export const signInSchema = z.object({
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters long"),
+})
+
+export const verifyTokenSchema = z.object({
+    verifyCode: z.string().min(6, "Verification code must be at least 6 characters long"),
+})
+
+export type SessionPayload = {
+    userId: string
+    tenentId: string
+    role: string
+    username: string
+    email: string
+}

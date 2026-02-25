@@ -1,6 +1,6 @@
 "use client"
 
-import { createTenent } from "@/app/actions/auth";
+import { createTenent } from "@/app/actions/auth-actions";
 import { useActionState } from "react";
 
 export default function CreateTenentPage() {

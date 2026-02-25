@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { extractSubdomain } from '@/helpers/helpers';
+import { getSession } from './lib/session';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const subdomain = extractSubdomain({ request });
+    const session = await getSession();
 
     if (subdomain) {
         // Block access to admin page from subdomains
@@ -12,11 +14,11 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    if (pathname.startsWith('/sign-up')) {
-        if (!subdomain) {
-            return NextResponse.redirect(new URL('/create-tenent', request.url))
-        }
-    }
+    // if (pathname.startsWith('/sign-up') || pathname.startsWith('/verify-token')) {
+    //     if (!subdomain) {
+    //         return NextResponse.redirect(new URL('/create-tenent', request.url))
+    //     }
+    // }
 
     // On the root domain, allow normal access
     return NextResponse.next();
