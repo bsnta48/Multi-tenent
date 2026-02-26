@@ -1,7 +1,8 @@
 "use client"
 
 import { useActionState } from "react";
-import { signUp } from "../../actions/auth-actions";
+import { signUp } from "../../actions/auth";
+import Link from "next/link";
 
 
 export default function SignUpPage() {
@@ -33,6 +34,7 @@ export default function SignUpPage() {
                     {state?.errors?.confirmPassword && <p className="text-red-500">{state.errors.confirmPassword[0]}</p>}
                 </div>
                 <button type="submit" className="px-4 py-2 bg-blue-500 rounded-md cursor-pointer hover:bg-blue-600" disabled={isPending}>{isPending ? "Signing Up..." : "Sign Up"}</button>
+                <span className="text-sm text-gray-400">Already have an account? <Link className="underline text-blue-500" href="/sign-in">Sign In</Link></span>
             </form>
         </div>
     );

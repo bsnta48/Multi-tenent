@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { Resend } from "resend";
 import { EmailTemplate } from "@/components/email-template";
-import { createSession, getSession } from "@/lib/session";
+import { createSession, destroySession } from "@/lib/session";
 import crypto from "crypto";
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -41,6 +41,32 @@ export type FormState = {
     success?: boolean | null;
     message?: string | null;
 } | undefined;
+
+let hits = 0;
+
+export async function signOut() {
+    await destroySession()
+    redirect("/sign-in")
+}
+
+export async function checkToken(token: string) {
+    const user = await prisma.user.findFirst({
+        where: {
+            verifyToken: token,
+        }
+    })
+    if (!user) {
+        return {
+            success: false,
+            message: "Invalid verification token",
+        }
+    }
+    hits = 0;
+    return {
+        success: true,
+        message: "Verification token is valid",
+    }
+}
 
 export async function verifyToken(state: FormState, formData: FormData): Promise<FormState> {
 
@@ -78,7 +104,25 @@ export async function verifyToken(state: FormState, formData: FormData): Promise
             }
         }
 
+        if (hits > 3) {
+            await prisma.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    verifyToken: null,
+                    verifyCode: null,
+                    verifyCodeExpiry: null,
+                }
+            })
+            return {
+                success: false,
+                message: "Too many attempts",
+            }
+        }
+
         if (!user.verifyCode || user.verifyCode !== validate.data.verifyCode) {
+            hits++;
             return {
                 success: false,
                 message: "Verify code is invalid",
@@ -121,10 +165,7 @@ export async function verifyToken(state: FormState, formData: FormData): Promise
             }
         }
 
-        return {
-            success: true,
-            message: "You are verified successfully",
-        }
+        hits = 0;
 
     } catch (error) {
         return {
@@ -133,10 +174,12 @@ export async function verifyToken(state: FormState, formData: FormData): Promise
         }
     }
 
-    // redirect("/sign-in")
+    redirect("/sign-in")
 }
 
 export async function signIn(state: FormState, formData: FormData): Promise<FormState> {
+    const verifyToken = generateToken;
+    let isVerified = false;
     try {
         const headersList = await headers();
         const host = headersList.get('host');
@@ -152,13 +195,13 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
         }
 
         // check subdomain exist or not
-        const isSubdomainExist = await prisma.tenent.findUnique({
+        const tenent = await prisma.tenent.findUnique({
             where: {
                 subdomain,
             }
         })
 
-        if (!isSubdomainExist) {
+        if (!tenent) {
             return {
                 success: false,
                 message: "Subdomain not found"
@@ -186,13 +229,14 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
             }
         }
 
-        const isEmailExist = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
             where: {
                 email: validate.data.email,
+                tenentId: tenent.id,
             }
         })
 
-        if (!isEmailExist) {
+        if (!user) {
             return {
                 ...data,
                 success: false,
@@ -200,7 +244,7 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
             }
         }
 
-        const isPasswordValid = await bcrypt.compare(validate.data.password, isEmailExist.password);
+        const isPasswordValid = await bcrypt.compare(validate.data.password, user.password);
 
         if (!isPasswordValid) {
             return {
@@ -210,16 +254,54 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
             }
         }
 
-        return {
-            success: true,
-            message: "You are logged in successfully",
+        console.log("verified", user.verified)
+
+        if(user.verified){
+            isVerified = true;
+            await createSession({
+                userId: user.id,
+                email: user.email,
+                username: user.username,
+                tenentId: user.tenentId,
+                role: user.role,
+            })
         }
+
+        if (!user.verified) {
+            const verifyCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit random number
+            const verifyCodeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+            const isUpdated = await prisma.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    verifyCode,
+                    verifyCodeExpiry,
+                    verifyToken
+                }
+            })
+            if (!isUpdated) {
+                return {
+                    ...data,
+                    success: false,
+                    message: "Something went wrong"
+                }
+            }
+            await sendVerificationEmail(user.email, verifyCode)
+        }
+
     } catch (error) {
         return {
             success: false,
             message: "Something went wrong",
         }
     }
+
+    if(isVerified){
+        redirect("/dashboard")
+    }
+
+    redirect("/verify-token/" + verifyToken)
 }
 
 export async function signUp(state: FormState, formData: FormData): Promise<FormState> {

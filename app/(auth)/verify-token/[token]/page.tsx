@@ -1,17 +1,33 @@
 "use client"
 
-import { useActionState } from "react"
-import { verifyToken } from "@/app/actions/auth-actions"
+import { useActionState, useEffect, useState } from "react"
+import { verifyToken, checkToken } from "@/app/actions/auth"
 import { notFound, useParams } from "next/navigation"
 import Link from "next/link"
 
 export default function VerifyTokenPage() {
+    const [isLoading, setIsLoading] = useState(true)
+    const [isValidUrl, setIsValidUrl] = useState(true)
+    const [state, formAction, isPending] = useActionState(verifyToken, undefined)
     const params = useParams()
     const token = params.token as string
-    const [state, formAction, isPending] = useActionState(verifyToken, undefined)
+
+    const isValidToken = async () => {
+        const res = await checkToken(token)
+        if (res) {
+            setIsValidUrl(res.success)
+            setIsLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        isValidToken()
+    }, [token])
+
     if (!token) {
         return notFound()
     }
+    
     if (state?.success) {
         return (
             <div className="max-w-sm mx-auto text-center">
@@ -20,6 +36,24 @@ export default function VerifyTokenPage() {
             </div>
         )
     }
+
+    if(isLoading) {
+        return (
+            <div className="max-w-sm mx-auto text-center">
+                <p className="text-gray-500 mb-4">Loading...</p>
+            </div>
+        )
+    }
+
+    if(!isValidUrl) {
+        return (
+            <div className="max-w-sm mx-auto text-center">
+                <p className="text-red-500 mb-4">Invalid token</p>
+                <Link href="/sign-in" className="text-white px-4 py-2 bg-blue-500 rounded-md cursor-pointer hover:bg-blue-600">Sign In</Link>
+            </div>
+        )
+    }
+
     return (
         <div className="max-w-sm mx-auto">
             <h1 className="text-2xl font-bold mb-4">Verify your token</h1>

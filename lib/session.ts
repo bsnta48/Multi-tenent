@@ -7,6 +7,7 @@ import { SessionPayload } from "./schema"
 const secretKey = process.env.SESSION_SECRET
 const encodedKey = new TextEncoder().encode(secretKey)
 
+// encrypt session
 export async function encrypt(payload: SessionPayload) {
     return new SignJWT(payload)
         .setProtectedHeader({ alg: 'HS256' })
@@ -15,6 +16,7 @@ export async function encrypt(payload: SessionPayload) {
         .sign(encodedKey)
 }
 
+// decrypt session
 export async function decrypt(session: string): Promise<SessionPayload | null> {
     try {
         const { payload } = await jwtVerify(session, encodedKey, {
@@ -27,7 +29,8 @@ export async function decrypt(session: string): Promise<SessionPayload | null> {
     }
 }
 
-export async function createSession(payload: SessionPayload){
+// create session
+export async function createSession(payload: SessionPayload) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     const session = await encrypt(payload)
     const cookiesStore = await cookies()
@@ -41,14 +44,32 @@ export async function createSession(payload: SessionPayload){
     })
 }
 
+// update session
+export async function updateSession() {
+    const cookiesStore = await cookies()
+    const session = cookiesStore.get("session")?.value
+    const payload = await decrypt(session || "")
+    if (!session || !payload) return null
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    cookiesStore.set("session", session, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        expires,
+        path: "/",
+    })
+}
+
+// destroy session
 export async function destroySession() {
     const cookiesStore = await cookies()
     cookiesStore.delete("session")
 }
 
+// get session
 export async function getSession(): Promise<SessionPayload | null> {
     const cookiesStore = await cookies()
-    const session = cookiesStore.get("session")
+    const session = cookiesStore.get("session")?.value
     if (!session) return null
-    return decrypt(session.value)
+    return decrypt(session)
 }
