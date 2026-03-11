@@ -20,26 +20,40 @@ model Tenent {
 }
 
 model User {
-  id               String    @id @default(uuid())
-  username         String    @unique
-  email            String    @unique
-  verified         Boolean   @default(false)
+  id               String       @id @default(uuid())
+  username         String       @unique
+  email            String       @unique
+  verified         Boolean      @default(false)
   password         String
   name             String?
-  role             String    @default("member")
+  role             String       @default("member")
   verifyToken      String?
   verifyCode       String?
   verifyCodeExpiry DateTime?
-  posts            Post[]
-  tenent           Tenent    @relation(fields: [tenentId], references: [id])
+  tenent           Tenent       @relation(fields: [tenentId], references: [id])
   tenentId         String
+  userProfile      UserProfile?
 }
 
-model Post {
-  id        String  @id @default(uuid())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  String
+model UserProfile {
+  id              String   @id @default(uuid())
+  firstName       String?
+  lastName        String?
+  address         String?
+  dob             DateTime?
+  level           String?
+  jobTitle        String?
+  branch          String?
+  department      String?
+  subDepartment   String?
+  unit            String?
+  province        String?
+  status          String?
+  jobDescription  String?
+  servicePeriod   String?
+  joinDate        DateTime?
+  phone           String   @unique
+  officialContact String?
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String   @unique
 }

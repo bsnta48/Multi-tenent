@@ -1,33 +1,45 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { extractSubdomain } from '@/helpers/helpers';
 import { getSession } from './lib/session';
 
-const AUTH_ROUTES = ["/sign-in", "/sign-up", "/verify-token"];
-const PUBLIC_ROUTES = ["/", ...AUTH_ROUTES];
+const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/verify-token"];
 const PROTECTED_ROUTES = ["/dashboard"];
+const ADMIN_ROUTES = ["/dashboard/users"];
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
-    const subdomain = extractSubdomain({ request });
+    const host = request.headers.get('host') || '';
+    const domains = host.split('.')
+    const subdomain = domains.length > 1 ? domains[0] : '';
     const session = await getSession();
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
     const isProtectedRoute = PROTECTED_ROUTES.includes(pathname);
-    const isAuthRoute = AUTH_ROUTES.includes(pathname);
+    const isAdminRoute = ADMIN_ROUTES.includes(pathname);
 
-    if(isProtectedRoute && !session?.userId){
-        return NextResponse.redirect(new URL('/sign-in', request.url))
+    if (isAdminRoute) {
+        if (session?.role !== "admin") {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
     }
 
-    if(isPublicRoute && session?.userId){
-        return NextResponse.redirect(new URL('/dashboard', request.url))
+    if (isProtectedRoute) {
+        if (!session?.userId) {
+            return NextResponse.redirect(new URL('/sign-in', request.url))
+        }
     }
 
-    // if(!subdomain && isPublicRoute && !session?.userId){
-    //     return NextResponse.redirect(new URL('/create-tenent', request.url))
-    // }
+    if (isPublicRoute) {
+        if (session?.userId) {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+        if (!subdomain && !session?.userId) {
+            return NextResponse.redirect(new URL('/create-tenent', request.url))
+        }
+    }
 
-    if(subdomain && pathname.startsWith("/create-tenent")){
-        return NextResponse.redirect(new URL('/sign-in', request.url))
+    if (subdomain) {
+        if (pathname.startsWith("/create-tenent")) {
+            return NextResponse.redirect(new URL('/sign-in', request.url))
+        }
     }
 
     // On the root domain, allow normal access

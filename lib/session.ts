@@ -31,7 +31,7 @@ export async function decrypt(session: string): Promise<SessionPayload | null> {
 
 // create session
 export async function createSession(payload: SessionPayload) {
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
     const session = await encrypt(payload)
     const cookiesStore = await cookies()
 
@@ -50,7 +50,7 @@ export async function updateSession() {
     const session = cookiesStore.get("session")?.value
     const payload = await decrypt(session || "")
     if (!session || !payload) return null
-    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const expires = new Date(Date.now() + 10 * 60 * 1000)
     cookiesStore.set("session", session, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",

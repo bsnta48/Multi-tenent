@@ -1,16 +1,15 @@
 "use server"
 
-import { headers } from "next/headers";
-import { protocol, rootDomain } from "@/lib/utils";
-import { signUpSchema, createTenentSchema, signInSchema, verifyTokenSchema } from "@/lib/schema";
-import { extractSubdomain } from "@/helpers/helpers";
+import { EmailTemplate } from "@/components/EmailTemplate";
 import { prisma } from "@/lib/prisma";
+import { createTenentSchema, signInSchema, signUpSchema, verifyTokenSchema } from "@/lib/schema";
+import { createSession, destroySession } from "@/lib/session";
+import { protocol, rootDomain } from "@/lib/utils";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Resend } from "resend";
-import { EmailTemplate } from "@/components/email-template";
-import { createSession, destroySession } from "@/lib/session";
-import crypto from "crypto";
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -183,8 +182,7 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
     try {
         const headersList = await headers();
         const host = headersList.get('host');
-        const url = host ? `${protocol}://${host}` : null;
-        const subdomain = extractSubdomain({ host, url });
+        const subdomain = host?.split('.')[0];
 
         // validate subdomain
         if (!subdomain) {
@@ -256,7 +254,7 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
 
         console.log("verified", user.verified)
 
-        if(user.verified){
+        if (user.verified) {
             isVerified = true;
             await createSession({
                 userId: user.id,
@@ -297,7 +295,7 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
         }
     }
 
-    if(isVerified){
+    if (isVerified) {
         redirect("/dashboard")
     }
 
@@ -307,8 +305,9 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
 export async function signUp(state: FormState, formData: FormData): Promise<FormState> {
     const headersList = await headers();
     const host = headersList.get('host');
-    const url = host ? `${protocol}://${host}` : null;
-    const subdomain = extractSubdomain({ host, url });
+    const subdomain = host?.split('.')[0];
+
+    console.log("subdomain", subdomain);
 
     // validate subdomain
     if (!subdomain) {
@@ -336,6 +335,7 @@ export async function signUp(state: FormState, formData: FormData): Promise<Form
     const validate = signUpSchema.safeParse({
         username: formData.get("username"),
         email: formData.get("email"),
+        phone: formData.get("phone"),
         password: formData.get("password"),
         confirmPassword: formData.get("confirmPassword"),
     })
@@ -344,6 +344,7 @@ export async function signUp(state: FormState, formData: FormData): Promise<Form
         data: {
             username: formData.get("username") as string,
             email: formData.get("email") as string,
+            phone: formData.get("phone") as string,
             password: formData.get("password") as string,
             confirmPassword: formData.get("confirmPassword") as string,
         },
@@ -404,7 +405,7 @@ export async function signUp(state: FormState, formData: FormData): Promise<Form
                 tenentId: isSubdomainExist.id,
                 verifyCode,
                 verifyCodeExpiry,
-                verifyToken
+                verifyToken,
             }
         })
 
@@ -446,6 +447,7 @@ export async function createTenent(state: FormState, formData: FormData): Promis
         subdomain: formData.get("subdomain") as string,
         username: formData.get("username") as string,
         email: formData.get("email") as string,
+        phone: formData.get("phone") as string,
         password: formData.get("password") as string,
         confirmPassword: formData.get("confirmPassword") as string,
     }
@@ -479,31 +481,31 @@ export async function createTenent(state: FormState, formData: FormData): Promis
             }
         }
 
-        const tenent = await prisma.tenent.create({
-            data: {
-                name: validate.data.organizationName,
-                subdomain: validate.data.subdomain,
-            }
-        })
-
         const hashedPassword = await bcrypt.hash(validate.data.password, 10);
         const verifyCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit random number
         const verifyCodeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
-        const user = await prisma.user.create({
+        const tenent = await prisma.tenent.create({
             data: {
-                username: validate.data.username,
-                email: validate.data.email,
-                password: hashedPassword,
-                tenentId: tenent.id,
-                role: "admin",
-                verifyCode,
-                verifyCodeExpiry,
-                verifyToken
+                name: validate.data.organizationName,
+                subdomain: validate.data.subdomain,
+                users: {
+                    create: [
+                        {
+                            username: validate.data.username,
+                            email: validate.data.email,
+                            password: hashedPassword,
+                            role: "admin",
+                            verifyCode,
+                            verifyCodeExpiry,
+                            verifyToken,
+                        }
+                    ]
+                }
             }
         })
 
-        if (!tenent || !user) {
+        if (!tenent) {
             return {
                 data: validate.data,
                 success: false,
@@ -511,7 +513,8 @@ export async function createTenent(state: FormState, formData: FormData): Promis
             }
         }
 
-        const { error } = await sendVerificationEmail(user.email, verifyCode)
+
+        const { error } = await sendVerificationEmail(validate.data.email, verifyCode)
 
         if (error) {
             console.log(error)

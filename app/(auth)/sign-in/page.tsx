@@ -1,10 +1,11 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import { signIn } from "@/app/actions/auth"
 import Link from "next/link"
 
 export default function SignInPage() {
+    const [isPrefetch, setIsPrefetch] = useState(false)
     const [state, formAction, isPending] = useActionState(signIn, undefined)
     return (
         <div className="max-w-sm mx-auto">
@@ -19,11 +20,11 @@ export default function SignInPage() {
                 </div>
                 <div>
                     <label htmlFor="password">Password</label>
-                    <input defaultValue={state?.data?.password} id="password" type="password" name="password" placeholder="Type new password" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
+                    <input defaultValue={state?.data?.password} id="password" type="password" name="password" placeholder="Enter your password" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
                     {state?.errors?.password && <p className="text-red-500">{state.errors.password[0]}</p>}
                 </div>
                 <button type="submit" className="px-4 py-2 bg-blue-500 rounded-md cursor-pointer hover:bg-blue-600" disabled={isPending}>{isPending ? "Signing In..." : "Sign In"}</button>
-                <span className="text-sm text-gray-400">Don't have an account? <Link className="underline text-blue-500" href="/sign-up">Sign Up</Link></span>
+                <span className="text-sm text-gray-400">Don't have an account? <Link onMouseEnter={() => setIsPrefetch(true)} onMouseLeave={() => setIsPrefetch(false)} prefetch={isPrefetch} className="underline text-blue-500" href="/sign-up">Sign Up</Link></span>
             </form>
         </div>
     )
