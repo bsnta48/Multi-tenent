@@ -20,23 +20,25 @@ model Tenent {
 }
 
 model User {
-  id               String       @id @default(uuid())
-  username         String       @unique
-  email            String       @unique
-  verified         Boolean      @default(false)
+  id               String         @id @default(uuid())
+  username         String         @unique
+  email            String         @unique
+  verified         Boolean        @default(false)
   password         String
-  name             String?
-  role             String       @default("member")
-  verifyToken      String?
+  role             String         @default("member")
   verifyCode       String?
   verifyCodeExpiry DateTime?
-  tenent           Tenent       @relation(fields: [tenentId], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  tenent           Tenent         @relation(fields: [tenentId], references: [id])
   tenentId         String
   userProfile      UserProfile?
+  refreshTokens    RefreshToken[]
 }
 
 model UserProfile {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
+  avatar          String?
   firstName       String?
   lastName        String?
   address         String?
@@ -52,8 +54,31 @@ model UserProfile {
   jobDescription  String?
   servicePeriod   String?
   joinDate        DateTime?
-  phone           String   @unique
+  phone           String    @unique
   officialContact String?
-  user            User     @relation(fields: [userId], references: [id])
-  userId          String   @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String    @unique
+}
+
+model Invite {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  tenentId  String
+  role      String
+  token     String   @unique
+  expireAt  DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }

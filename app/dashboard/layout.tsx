@@ -2,6 +2,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import { getTenent } from "../actions/dashboard"
 import { getSession } from "@/lib/session"
+import { Toaster } from "@/components/ui/sonner"
 
 export default async function DashboardLayout({
     children,
@@ -16,6 +17,7 @@ export default async function DashboardLayout({
             <SidebarInset className="p-4">
                 {children}
             </SidebarInset>
+            <Toaster />
         </SidebarProvider>
     )
 }

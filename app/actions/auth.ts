@@ -1,6 +1,5 @@
 "use server"
 
-import { EmailTemplate } from "@/components/EmailTemplate";
 import { prisma } from "@/lib/prisma";
 import { createTenentSchema, signInSchema, signUpSchema, verifyTokenSchema } from "@/lib/schema";
 import { createSession, destroySession } from "@/lib/session";
@@ -9,9 +8,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendVerificationEmail } from "@/lib/send-email";
 
 const token = crypto.randomBytes(32).toString("hex");
 
@@ -252,8 +249,6 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
             }
         }
 
-        console.log("verified", user.verified)
-
         if (user.verified) {
             isVerified = true;
             await createSession({
@@ -268,7 +263,7 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
         if (!user.verified) {
             const verifyCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit random number
             const verifyCodeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-            const isUpdated = await prisma.user.update({
+            await prisma.user.update({
                 where: {
                     id: user.id,
                 },
@@ -278,13 +273,6 @@ export async function signIn(state: FormState, formData: FormData): Promise<Form
                     verifyToken
                 }
             })
-            if (!isUpdated) {
-                return {
-                    ...data,
-                    success: false,
-                    message: "Something went wrong"
-                }
-            }
             await sendVerificationEmail(user.email, verifyCode)
         }
 
@@ -528,18 +516,4 @@ export async function createTenent(state: FormState, formData: FormData): Promis
     }
 
     redirect(`${protocol}://${sanitizeName}.${rootDomain}/verify-token/${verifyToken}`)
-}
-
-export async function sendVerificationEmail(email: string, verifyCode: string) {
-    try {
-        const { data, error } = await resend.emails.send({
-            from: `Acme <${process.env.RESEND_FROM_EMAIL}>`,
-            to: [email],
-            subject: "Verify your email address",
-            react: EmailTemplate({ name: "Basant", url: "https://google.com", verifyCode }),
-        })
-        return { data, error }
-    } catch (error: any) {
-        return { error }
-    }
 }

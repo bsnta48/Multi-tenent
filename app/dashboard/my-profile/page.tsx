@@ -1,11 +1,11 @@
-import { getProfile } from "@/app/actions/dashboard"
+import { getUser } from "@/app/actions/dashboard"
 import Form from "./Form"
 
 export default async function ProfilePage() {
-    const profile = await getProfile()
+    const user = await getUser()
     return (
         <div>
-            <Form />
+            <Form user={user} />
         </div>
     )
 }
