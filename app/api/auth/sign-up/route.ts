@@ -1,6 +1,6 @@
 import { errorResponse, successResponse, validationError } from "@/lib/api-response"
 import { prisma } from "@/lib/prisma"
-import { createTenentSchema } from "@/lib/schema"
+import { createTenentSchema, createInviteSchema } from "@/lib/schema"
 import { sendVerificationEmail } from "@/lib/send-email"
 import { generateEmailToken, protocol, rootDomain } from "@/lib/utils"
 import bcrypt from "bcryptjs"
@@ -8,12 +8,66 @@ import { NextRequest } from "next/server"
 
 export async function POST(request: NextRequest) {
     try {
-        const data = await request.json()
+        const { inviteToken, ...rest } = await request.json()
+
+        /**
+         * Verify invited user
+         */
+        if (inviteToken) {
+            const validate = createInviteSchema.safeParse(rest)
+            if (!validate.success) {
+                return validationError(validate.error)
+            }
+            const { tenentId, username, email, password, role } = validate.data
+            const invitedUser = await prisma.invite.findUnique({
+                where: {
+                    email,
+                    token: inviteToken,
+                    used: false,
+                    expireAt: {
+                        gt: new Date()
+                    }
+                }
+            })
+            if (!invitedUser) {
+                return errorResponse("Invite not found or expired", 404)
+            }
+            const [usernameExist, emailExist] = await Promise.all([
+                prisma.user.findUnique({
+                    where: { username }
+                }),
+                prisma.user.findUnique({
+                    where: { email }
+                })
+            ])
+            if (usernameExist || emailExist) {
+                return errorResponse("Username or Email already exist", 400)
+            }
+            const hashedPassword = await bcrypt.hash(password, 10)
+            const user = await prisma.user.create({
+                data: {
+                    username,
+                    email,
+                    password: hashedPassword,
+                    role,
+                    tenentId,
+                    verified: true
+                },
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    role: true,
+                    verified: true,
+                }
+            })
+            return successResponse(user, "User created successfully")
+        }
 
         /**
          * Validate user's input data
          */
-        const validate = createTenentSchema.safeParse(data)
+        const validate = createTenentSchema.safeParse(rest)
         if (!validate.success) {
             return validationError(validate.error)
         }
@@ -45,7 +99,6 @@ export async function POST(request: NextRequest) {
         /**
          * Generate verification code
          */
-        const verifyCode = Math.floor(100000 + Math.random() * 900000).toString()
         const verifyCodeExpiry = new Date(Date.now() + 10 * 60 * 1000)
 
         /**

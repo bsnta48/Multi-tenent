@@ -56,6 +56,13 @@ export const inviteSchema = z.object({
     role: z.enum(["admin", "member"])
 })
 
+export const createInviteSchema = usernameSchema.extend({
+    email: z.string().email("Invalid email address"),
+    role: z.enum(["admin", "member"]),
+    password: z.string().min(6, "Password must be at least 6 characters long"),
+    tenentId: z.string()
+})
+
 export type SessionPayload = {
     userId: string
     tenentId: string

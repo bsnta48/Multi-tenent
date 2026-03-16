@@ -28,12 +28,12 @@ export async function POST(req: NextRequest) {
             },
             update: {
                 token: inviteToken,
-                expireAt: new Date(Date.now() + 10 * 60 * 1000),
+                expireAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
             },
             create: {
                 email,
                 token: inviteToken,
-                expireAt: new Date(Date.now() + 10 * 60 * 1000),
+                expireAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
                 role,
                 tenentId: user.tenentId,
             }
