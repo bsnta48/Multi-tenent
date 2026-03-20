@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getSession } from './lib/session';
+import { verifyUser } from './lib/auth';
 
 const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/verify-token"];
 const PROTECTED_ROUTES = ["/dashboard"];
@@ -7,25 +7,25 @@ const ADMIN_ROUTES = ["/dashboard/users"];
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
-    const session = await getSession();
+    const user = await verifyUser()
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
     const isProtectedRoute = PROTECTED_ROUTES.includes(pathname);
     const isAdminRoute = ADMIN_ROUTES.includes(pathname);
 
     if (isAdminRoute) {
-        if (session?.role !== "admin") {
+        if (user?.role !== "admin") {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
     }
 
     if (isProtectedRoute) {
-        if (!session?.userId) {
+        if (!user?.userId) {
             return NextResponse.redirect(new URL('/sign-in', request.url))
         }
     }
 
     if (isPublicRoute) {
-        if (session?.userId) {
+        if (user?.userId) {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
     }

@@ -54,7 +54,7 @@ model UserProfile {
   jobDescription  String?
   servicePeriod   String?
   joinDate        DateTime?
-  phone           String    @unique
+  phone           String?   @unique
   officialContact String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -78,6 +78,7 @@ model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
+  deviceName String
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])

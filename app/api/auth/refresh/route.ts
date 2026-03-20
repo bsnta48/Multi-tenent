@@ -13,13 +13,16 @@ export async function POST() {
         }
         const user = await prisma.refreshToken.findUnique({
             where: {
-                token: refreshToken,
-                expiresAt: {
-                    gt: new Date()
-                }
+                token: refreshToken
             }
         })
-        if (!user) {
+        const currentDate = new Date()
+        if (!user || user.expiresAt < currentDate) {
+            await prisma.refreshToken.delete({
+                where: {
+                    token: refreshToken
+                }
+            })
             return errorResponse("Invalid token", 401)
         }
         const findUser = await prisma.user.findUnique({

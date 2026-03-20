@@ -1,14 +1,19 @@
 import { errorResponse, successResponse, validationError } from "@/lib/api-response"
-import { createToken } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { signInSchema } from "@/lib/schema"
 import setToken from "@/lib/set-token"
 import bcrypt from "bcryptjs"
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
+import { UAParser } from "ua-parser-js"
 
 export async function POST(req: NextRequest) {
     try {
+        const userAgent = req.headers.get("user-agent") || ""
         const data = await req.json()
+
+        const parser = new UAParser(userAgent)
+        const result = parser.getResult()
+        const deviceName = `${result.browser.name} on ${result.os.name}`
 
         /**
          * Validate user's input data
@@ -57,7 +62,8 @@ export async function POST(req: NextRequest) {
         const refreshTokenPayload = {
             userId: user.id,
             type: "refresh",
-            expiresAt: new Date(Date.now() + 60 * 60 * 24 * 7 * 1000)
+            expiresAt: new Date(Date.now() + 60 * 60 * 24 * 7 * 1000),
+            deviceName
         }
         await setToken("accessToken", accessTokenPayload, 60 * 15)
         await setToken("refreshToken", refreshTokenPayload, 60 * 60 * 24 * 7)

@@ -20,6 +20,7 @@ export default async function setToken(tokenName: string, tokenPayload: TokenPay
             data: {
                 token: token,
                 userId: tokenPayload.userId,
+                deviceName: (tokenPayload as RefreshTokenPayload).deviceName,
                 expiresAt: (tokenPayload as RefreshTokenPayload).expiresAt
             }
         })

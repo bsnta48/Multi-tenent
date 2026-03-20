@@ -1,17 +1,17 @@
-import { errorResponse, successResponse } from "@/lib/api-response";
-import { verifyUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
+import { errorResponse, successResponse } from "@/lib/api-response";
+import { prisma } from "@/lib/prisma";
 
-export async function GET(req: NextRequest, { params }: { params: { tenentId?: string | undefined } }) {
+
+export async function GET(req: NextRequest, ctx: RouteContext<'/api/users/[id]'>) {
     try {
-        const user = await verifyUser()
-        if (!user) {
-            return errorResponse("Unauthorized", 401)
+        const { id } = await ctx.params
+        if (!id) {
+            return errorResponse("User ID is required", 400)
         }
-        const users = await prisma.user.findMany({
+        const user = await prisma.user.findUnique({
             where: {
-                tenentId: user.tenentId
+                id
             },
             omit: {
                 verifyCode: true,
@@ -20,14 +20,17 @@ export async function GET(req: NextRequest, { params }: { params: { tenentId?: s
             },
             include: {
                 userProfile: {
-                    omit:{
+                    omit: {
                         id: true,
                         userId: true,
                     }
                 }
             }
         })
-        return successResponse(users, "Users fetched successfully")
+        if (!user) {
+            return errorResponse("User not found", 404)
+        }
+        return successResponse(user, "User fetched successfully")
     } catch (error) {
         return errorResponse(`Internal server error: ${error}`, 500)
     }

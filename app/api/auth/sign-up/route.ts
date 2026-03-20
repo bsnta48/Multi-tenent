@@ -1,4 +1,5 @@
 import { errorResponse, successResponse, validationError } from "@/lib/api-response"
+import { isValidInvite } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createTenentSchema, createInviteSchema } from "@/lib/schema"
 import { sendVerificationEmail } from "@/lib/send-email"
@@ -9,7 +10,6 @@ import { NextRequest } from "next/server"
 export async function POST(request: NextRequest) {
     try {
         const { inviteToken, ...rest } = await request.json()
-
         /**
          * Verify invited user
          */
@@ -19,16 +19,7 @@ export async function POST(request: NextRequest) {
                 return validationError(validate.error)
             }
             const { tenentId, username, email, password, role } = validate.data
-            const invitedUser = await prisma.invite.findUnique({
-                where: {
-                    email,
-                    token: inviteToken,
-                    used: false,
-                    expireAt: {
-                        gt: new Date()
-                    }
-                }
-            })
+            const invitedUser = await isValidInvite(inviteToken)
             if (!invitedUser) {
                 return errorResponse("Invite not found or expired", 404)
             }
@@ -51,7 +42,13 @@ export async function POST(request: NextRequest) {
                     password: hashedPassword,
                     role,
                     tenentId,
-                    verified: true
+                    verified: true,
+                    userProfile: {
+                        create: {
+                            firstName: "",
+                            lastName: "",
+                        }
+                    }
                 },
                 select: {
                     id: true,
@@ -59,6 +56,14 @@ export async function POST(request: NextRequest) {
                     email: true,
                     role: true,
                     verified: true,
+                }
+            })
+            await prisma.invite.update({
+                where: {
+                    email: invitedUser.email,
+                },
+                data: {
+                    used: true
                 }
             })
             return successResponse(user, "User created successfully")
@@ -117,6 +122,12 @@ export async function POST(request: NextRequest) {
                         role: "admin",
                         verifyCode: generateVerifyToken,
                         verifyCodeExpiry,
+                        userProfile: {
+                            create: {
+                                firstName: "",
+                                lastName: ""
+                            }
+                        }
                     }
                 }
             },

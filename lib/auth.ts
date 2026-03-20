@@ -3,7 +3,7 @@
 import { SignJWT, jwtVerify } from "jose"
 import { TokenPayload, RefreshTokenPayload } from "./types"
 import { cookies } from "next/headers"
-import { errorResponse } from "./api-response"
+import { prisma } from "./prisma"
 
 const secretKey = process.env.SESSION_SECRET
 const encodedKey = new TextEncoder().encode(secretKey)
@@ -38,4 +38,25 @@ export async function verifyUser() {
         return null
     }
     return user as TokenPayload
+}
+
+export async function isValidInvite(token: string) {
+    const invitedUser = await prisma.invite.findUnique({
+        where: {
+            token,
+            expireAt: {
+                gt: new Date()
+            },
+            used: false
+        },
+        select: {
+            email: true,
+            role: true,
+            tenentId: true
+        }
+    })
+    if (!invitedUser) {
+        return null
+    }
+    return invitedUser
 }
