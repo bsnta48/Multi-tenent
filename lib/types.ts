@@ -9,6 +9,6 @@ export type TokenPayload = {
 export type RefreshTokenPayload = {
     userId: string,
     type: string,
-    expiresAt: Date,
-    deviceName: string
+    deviceName: string,
+    rememberMe: boolean
 }

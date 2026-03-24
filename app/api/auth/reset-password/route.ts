@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
                 verifyCodeExpiry: null
             }
         })
-        return successResponse("Password reset successfully")
+        return successResponse({}, "Password reset successfully")
 
     } catch (error) {
         return errorResponse(`Internale server error: ${error}`, 500)

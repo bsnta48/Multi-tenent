@@ -1,24 +1,24 @@
 "use client"
 
-import { useActionState, useState } from "react"
-import { signIn } from "@/app/actions/auth"
+import { forgotPassword } from "@/app/actions/auth"
 import FieldsError from "@/components/FieldsError"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { useActionState } from "react"
 
-export default function SignInPage() {
-    const [state, formAction, isPending] = useActionState(signIn, undefined)
+export default function ForgotPasswordPage() {
+    const [state, formAction, isPending] = useActionState(forgotPassword, undefined)
     return (
         <Card className="w-full max-w-lg mx-auto">
             <CardHeader>
-                <CardTitle className="text-2xl font-bold mb-4">Create your account</CardTitle>
+                <CardTitle className="text-2xl font-bold mb-4">Forgot your password?</CardTitle>
                 <CardDescription></CardDescription>
                 <CardAction>
                     <Button variant="link" asChild>
-                        <Link href="/sign-up">Sign Up</Link>
+                        <Link href="/sign-in">Sign In</Link>
                     </Button>
                 </CardAction>
             </CardHeader>
@@ -27,26 +27,19 @@ export default function SignInPage() {
                     <FieldSet>
                         <FieldGroup>
                             {!state?.success && <FieldError>{state?.message}</FieldError>}
-                            <Field>
+                            {state?.success && <FieldError className="text-green-500">{state?.message}</FieldError>}
+                            {!state?.success && <Field>
                                 <FieldLabel htmlFor="email">Email</FieldLabel>
                                 <Input defaultValue={state?.data?.email} id="email" name="email" aria-invalid={!!state?.error?.email?.errors[0]} />
                                 <FieldsError errors={state?.error?.email?.errors} />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="password">Password</FieldLabel>
-                                <Input type="password" defaultValue={state?.data?.password} id="password" name="password" aria-invalid={!!state?.error?.password?.errors[0]} />
-                                <FieldsError errors={state?.error?.password?.errors} />
-                            </Field>
+                            </Field>}
                         </FieldGroup>
                     </FieldSet>
                     <FieldSeparator className="my-2" />
                 </CardContent>
-                <CardFooter className="flex items-center justify-between">
-                    <Button type="submit" disabled={isPending}>{isPending ? "Signing In..." : "Sign In"}</Button>
-                    <Button variant="link" asChild>
-                        <Link href="/forgot-password">Forgot Password?</Link>
-                    </Button>
-                </CardFooter>
+                {!state?.success && <CardFooter className="flex items-center justify-between">
+                    <Button type="submit" disabled={isPending}>{isPending ? "Sending..." : "Send"}</Button>
+                </CardFooter>}
             </form>
         </Card>
     );

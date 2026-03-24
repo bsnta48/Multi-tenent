@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         })
         const verifyUrl = `${protocol}://${rootDomain}/reset-password/${generateVerifyToken}`;
         await sendForgotPasswordEmail(email, user.username, verifyUrl)
-        return successResponse("Password reset link sent successfully")
+        return successResponse({}, "Password reset link sent successfully, please check your email")
     } catch (error) {
         return errorResponse(`Internale server error: ${error}`, 500)
     }

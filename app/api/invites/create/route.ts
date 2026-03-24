@@ -5,6 +5,7 @@ import { inviteSchema } from "@/lib/schema";
 import { generateEmailToken, protocol, rootDomain } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { sendInviteLink } from "@/lib/send-email";
+import { NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
@@ -21,8 +22,35 @@ export async function POST(req: NextRequest) {
             return validationError(validate.error)
         }
         const { email, role } = validate.data
+        if (user.email === email) {
+            return NextResponse.json({
+                success: false,
+                message: "Invalid fields",
+                error: {
+                    email: {
+                        errors: ["You cannot invite yourself"]
+                    }
+                }
+            }, { status: 400 })
+        }
+        const isEmailExist = await prisma.invite.findUnique({
+            where: {
+                email
+            }
+        })
+        if (isEmailExist) {
+            return NextResponse.json({
+                success: false,
+                message: "Invalid fields",
+                error: {
+                    email: {
+                        errors: ["Invite already sent to this email"]
+                    }
+                }
+            }, { status: 400 })
+        }
         const inviteToken = generateEmailToken()
-        await prisma.invite.upsert({
+        const invites = await prisma.invite.upsert({
             where: {
                 email
             },
@@ -40,7 +68,7 @@ export async function POST(req: NextRequest) {
         })
         const url = `${protocol}://${rootDomain}/invite/${inviteToken}`
         await sendInviteLink(email, url)
-        return successResponse("Invite link sent successfully")
+        return successResponse(invites, "Invite link sent successfully")
     } catch (error) {
         return errorResponse(`Internale server error: ${error}`, 500)
     }

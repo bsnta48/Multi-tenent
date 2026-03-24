@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
                 verifyCodeExpiry: null
             }
         })
-        return successResponse("Email verified successfully")
+        return successResponse({}, "Email verified successfully")
     } catch (error) {
         return errorResponse(`Internale server error: ${error}`, 500)
     }

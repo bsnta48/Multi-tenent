@@ -12,7 +12,6 @@ datasource db {
 
 model Tenent {
   id        String   @id @default(uuid())
-  subdomain String   @unique
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -54,7 +53,7 @@ model UserProfile {
   jobDescription  String?
   servicePeriod   String?
   joinDate        DateTime?
-  phone           String?   @unique
+  phone           String?
   officialContact String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

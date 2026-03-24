@@ -1,50 +1,85 @@
 "use client"
 
-import { useActionState, useState } from "react";
 import { signUp } from "@/app/actions/auth";
+import FieldsError from "@/components/FieldsError";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator, FieldSet } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
+import { useActionState } from "react";
 
 
 export default function SignUpPage() {
-    const [isPrefetch, setIsPrefetch] = useState(false)
     const [state, formAction, isPending] = useActionState(signUp, undefined)
+
+    if (state?.success) {
+        return (
+            <Card className="w-full max-w-lg mx-auto">
+                <CardHeader>
+                    <CardDescription>{state.message}</CardDescription>
+                    <CardAction>
+                        <Button variant="link" asChild>
+                            <Link href="/sign-in">Sign In</Link>
+                        </Button>
+                    </CardAction>
+                </CardHeader>
+            </Card>
+        )
+    }
     return (
-        <Card className="w-full max-w-sm">
-            <h1 className="text-2xl font-bold mb-4">Create your account</h1>
-            <form action={formAction} className="flex flex-col gap-4 p-8 rounded-md bg-gray-800 [&_label]:block [&_input]:w-full">
-                <div>
-                    <label htmlFor="username">Username</label>
-                    <input defaultValue={state?.data?.username} id="username" type="text" name="username" placeholder="Enter username" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
-                    {state?.errors?.username && <p className="text-red-500">{state.errors.username[0]}</p>}
-                </div>
-                <div>
-                    <label htmlFor="username">Username</label>
-                    <input defaultValue={state?.data?.username} id="username" type="text" name="username" placeholder="Enter username" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
-                    {state?.errors?.username && <p className="text-red-500">{state.errors.username[0]}</p>}
-                </div>
-                <div>
-                    <label htmlFor="username">Username</label>
-                    <input defaultValue={state?.data?.username} id="username" type="text" name="username" placeholder="Enter username" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
-                    {state?.errors?.username && <p className="text-red-500">{state.errors.username[0]}</p>}
-                </div>
-                <div>
-                    <label htmlFor="email">Email</label>
-                    <input defaultValue={state?.data?.email} id="email" type="text" name="email" placeholder="Enter your email address" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
-                    {state?.errors?.email && <p className="text-red-500">{state.errors.email[0]}</p>}
-                </div>
-                <div>
-                    <label htmlFor="password">Password</label>
-                    <input defaultValue={state?.data?.password} id="password" type="password" name="password" placeholder="Type new password" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
-                    {state?.errors?.password && <p className="text-red-500">{state.errors.password[0]}</p>}
-                </div>
-                <div>
-                    <label htmlFor="confirmPassword">Confirm Password</label>
-                    <input id="confirmPassword" type="password" name="confirmPassword" placeholder="Confirm your password" className="flex-1 py-2 px-4 inline-block bg-white rounded-md text-black" />
-                    {state?.errors?.confirmPassword && <p className="text-red-500">{state.errors.confirmPassword[0]}</p>}
-                </div>
-                <button type="submit" className="px-4 py-2 bg-blue-500 rounded-md cursor-pointer hover:bg-blue-600" disabled={isPending}>{isPending ? "Signing Up..." : "Sign Up"}</button>
-                <span className="text-sm text-gray-400">Already have an account? <Link onMouseEnter={() => setIsPrefetch(true)} onMouseLeave={() => setIsPrefetch(false)} prefetch={isPrefetch} className="underline text-blue-500" href="/sign-in">Sign In</Link></span>
+        <Card className="w-full max-w-lg mx-auto">
+            <CardHeader>
+                <CardTitle className="text-2xl font-bold mb-4">Create your account</CardTitle>
+                <CardDescription></CardDescription>
+                <CardAction>
+                    <Button variant="link" asChild>
+                        <Link href="/sign-in">Sign In</Link>
+                    </Button>
+                </CardAction>
+            </CardHeader>
+            <form action={formAction}>
+                <CardContent>
+                    {!state?.success && state?.message && <FieldError>{state?.message}</FieldError>}
+                    <FieldSet>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel htmlFor="organization-name">Organization Name</FieldLabel>
+                                <Input defaultValue={state?.data?.organizationName} id="organization-name" name="organization-name" />
+                                <FieldsError errors={state?.error?.organizationName?.errors} />
+                            </Field>
+                        </FieldGroup>
+                    </FieldSet>
+                    <FieldSeparator className="my-2" />
+                    <FieldSet>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel htmlFor="username">Username</FieldLabel>
+                                <Input defaultValue={state?.data?.username} id="username" name="username" />
+                                <FieldsError errors={state?.error?.username?.errors} />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="email">Email</FieldLabel>
+                                <Input defaultValue={state?.data?.email} id="email" name="email" />
+                                <FieldsError errors={state?.error?.email?.errors} />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="password">Password</FieldLabel>
+                                <Input type="password" defaultValue={state?.data?.password} id="password" name="password" />
+                                <FieldsError errors={state?.error?.password?.errors} />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+                                <Input type="password" defaultValue={state?.data?.confirmPassword} id="confirm-password" name="confirm-password" />
+                                <FieldsError errors={state?.error?.confirmPassword?.errors} />
+                            </Field>
+                        </FieldGroup>
+                    </FieldSet>
+                    <FieldSeparator className="my-2" />
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" disabled={isPending}>{isPending ? "Signing Up..." : "Sign Up"}</Button>
+                </CardFooter>
             </form>
         </Card>
     );

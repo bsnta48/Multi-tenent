@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
                     where: { username }
                 }),
                 prisma.user.findUnique({
-                    where: { email }
+                    where: { email, tenentId }
                 })
             ])
             if (usernameExist || emailExist) {
@@ -76,15 +76,12 @@ export async function POST(request: NextRequest) {
         if (!validate.success) {
             return validationError(validate.error)
         }
-        const { subdomain, organizationName, username, email, password } = validate.data
+        const { organizationName, username, email, password } = validate.data
 
         /**
          * Check the user has already exist
          */
-        const [subdomainExist, usernameExist, emailExist] = await Promise.all([
-            prisma.tenent.findUnique({
-                where: { subdomain }
-            }),
+        const [usernameExist, emailExist] = await Promise.all([
             prisma.user.findUnique({
                 where: { username }
             }),
@@ -92,8 +89,8 @@ export async function POST(request: NextRequest) {
                 where: { email }
             })
         ])
-        if (subdomainExist || usernameExist || emailExist) {
-            return errorResponse("Subdomain, username or email already exists", 400)
+        if (usernameExist || emailExist) {
+            return errorResponse("Username or email already exists", 400, rest)
         }
 
         /**
@@ -113,7 +110,6 @@ export async function POST(request: NextRequest) {
         const tenent = await prisma.tenent.create({
             data: {
                 name: organizationName,
-                subdomain,
                 users: {
                     create: {
                         username,
@@ -150,7 +146,7 @@ export async function POST(request: NextRequest) {
         const verifyUrl = `${protocol}://${rootDomain}/verify-email/${generateVerifyToken}`;
         await sendVerificationEmail(email, username, verifyUrl)
 
-        return successResponse(tenent, "Tenent created successfully.")
+        return successResponse(tenent, "Account has been created successfully. Please check your email to verify your account.")
 
     } catch (error) {
         return errorResponse(`Internale server error: ${error}`, 500)

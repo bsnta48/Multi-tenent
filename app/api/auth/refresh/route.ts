@@ -47,7 +47,7 @@ export async function POST() {
             username: findUser.username,
             email: findUser.email
         }
-        await setToken("accessToken", tokenPayload, 60 * 15)
+        await setToken("accessToken", tokenPayload)
         return successResponse("Token refreshed successfully")
     } catch (error) {
         return errorResponse(`Internale server error: ${error}`, 500)

@@ -30,7 +30,6 @@ export const profileSchema = z.object({
 })
 
 export const createTenentSchema = signUpSchema.extend({
-    subdomain: z.string().min(3, "Domain must be at least 3 characters long").regex(/^[a-zA-Z0-9-]+$/, "Domain must contain only letters and numbers").transform((value) => value.trim().toLowerCase().replace(/\s+/g, "-")),
     organizationName: z.string().min(3, "Organization name must be at least 3 characters long"),
 })
 
@@ -62,6 +61,40 @@ export const createInviteSchema = usernameSchema.extend({
     password: z.string().min(6, "Password must be at least 6 characters long"),
     tenentId: z.string()
 })
+
+export interface userSchema{
+    id: string
+    tenentId: string
+    username: string
+    role: string
+    email: string
+    userProfile: {
+        firstName: string
+        lastName: string
+        phone: string
+        dob: string
+        address: string
+        branch: string
+        department: string
+        jobTitle: string
+        jobDescription: string
+        joinDate: string
+        level: string
+        officialContact: string
+        province: string
+        servicePeriod: string
+        status: string
+        subDepartment: string
+        unit: string
+    }
+}
+
+export interface tenentScheme{
+    id: string
+    name: string
+    createdAt: string
+    updatedAt: string
+}
 
 export type SessionPayload = {
     userId: string

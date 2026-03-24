@@ -62,11 +62,11 @@ export async function POST(req: NextRequest) {
         const refreshTokenPayload = {
             userId: user.id,
             type: "refresh",
-            expiresAt: new Date(Date.now() + 60 * 60 * 24 * 7 * 1000),
-            deviceName
+            deviceName,
+            rememberMe: data.rememberMe
         }
-        await setToken("accessToken", accessTokenPayload, 60 * 15)
-        await setToken("refreshToken", refreshTokenPayload, 60 * 60 * 24 * 7)
+        await setToken("accessToken", accessTokenPayload)
+        await setToken("refreshToken", refreshTokenPayload)
         return successResponse("User logged in successfully")
     } catch (error) {
         return errorResponse(`Internale server error: ${error}`, 500)

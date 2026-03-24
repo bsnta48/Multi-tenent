@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 export async function GET(req: NextRequest, { params }: { params: { tenentId?: string | undefined } }) {
     try {
         const user = await verifyUser()
-        if (!user) {
+        if (!user || user.role !== "admin") {
             return errorResponse("Unauthorized", 401)
         }
         const users = await prisma.user.findMany({
