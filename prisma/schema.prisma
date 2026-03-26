@@ -31,7 +31,9 @@ model User {
   updatedAt        DateTime       @updatedAt
   tenent           Tenent         @relation(fields: [tenentId], references: [id])
   tenentId         String
+  tokenVersion     Int            @default(0)
   userProfile      UserProfile?
+  requests         Request[]
   refreshTokens    RefreshToken[]
 }
 
@@ -74,11 +76,25 @@ model Invite {
 }
 
 model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
   deviceName String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Request {
+  id          String   @id @default(uuid())
+  type        String
+  event       String?
+  description String?
+  status      String   @default("pending")
+  replyText   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
 }

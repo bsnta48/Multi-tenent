@@ -15,14 +15,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Bell, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
+import Link from "next/link";
 
 export default function DashboardHeader() {
 
     const { setTheme } = useTheme();
-    const { user } = useDashboardContext();
+    const { me } = useDashboardContext();
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 justify-between">
+        <header
+            className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 justify-between">
             <div className="flex items-center gap-2 font-semibold md:text-lg">
                 <span className="text-xl font-bold tracking-tight">Dashboard</span>
             </div>
@@ -32,8 +34,10 @@ export default function DashboardHeader() {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="icon" className="relative h-10 w-10 rounded-full">
-                            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                            <Sun
+                                className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                            <Moon
+                                className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                             <span className="sr-only">Toggle theme</span>
                         </Button>
                     </DropdownMenuTrigger>
@@ -55,7 +59,8 @@ export default function DashboardHeader() {
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="icon" className="relative h-10 w-10 rounded-full">
                             <Bell className="h-5 w-5" />
-                            <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 p-0 text-xs text-white">
+                            <Badge
+                                className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 p-0 text-xs text-white">
                                 3
                             </Badge>
                             <span className="sr-only">Toggle notifications</span>
@@ -96,25 +101,29 @@ export default function DashboardHeader() {
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">{user?.userProfile?.firstName && user?.userProfile?.lastName
-                                    ? `${user?.userProfile.firstName} ${user?.userProfile.lastName}`
-                                    : user?.username}</p>
+                                <p className="text-sm font-medium leading-none">{me?.userProfile?.firstName
+                                    ? `${me?.userProfile.firstName} ${me?.userProfile.lastName}`
+                                    : me?.username}</p>
                                 <p className="text-xs leading-none text-muted-foreground">
-                                    {user?.email}
+                                    {me?.email}
                                 </p>
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="cursor-pointer">
                             <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
+                            <Link href={"/dashboard/profile"} className="w-full">
+                                <span>Profile</span>
+                            </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem className="cursor-pointer">
                             <Settings className="mr-2 h-4 w-4" />
                             <span>Settings</span>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => signOut()}>
+                        <DropdownMenuItem
+                            className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                            onClick={() => signOut()}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>

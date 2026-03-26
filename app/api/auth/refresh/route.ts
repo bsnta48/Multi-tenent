@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import setToken from "@/lib/set-token";
 import { TokenPayload } from "@/lib/types";
 import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
+import { hashToken } from "@/lib/utils";
 
 export async function POST() {
     try {
@@ -11,16 +13,18 @@ export async function POST() {
         if (!refreshToken) {
             return errorResponse("Unauthorized", 401)
         }
+        await verifyToken(refreshToken, "refresh")
+        const tokenHash = hashToken(refreshToken)
         const user = await prisma.refreshToken.findUnique({
             where: {
-                token: refreshToken
+                token: tokenHash
             }
         })
         const currentDate = new Date()
         if (!user || user.expiresAt < currentDate) {
             await prisma.refreshToken.delete({
                 where: {
-                    token: refreshToken
+                    token: tokenHash
                 }
             })
             return errorResponse("Invalid token", 401)
@@ -34,7 +38,8 @@ export async function POST() {
                 tenentId: true,
                 username: true,
                 role: true,
-                email: true
+                email: true,
+                tokenVersion: true
             }
         })
         if (!findUser) {
@@ -43,9 +48,7 @@ export async function POST() {
         const tokenPayload: TokenPayload = {
             userId: findUser.id,
             tenentId: findUser.tenentId,
-            role: findUser.role,
-            username: findUser.username,
-            email: findUser.email
+            tokenVersion: findUser.tokenVersion
         }
         await setToken("accessToken", tokenPayload)
         return successResponse("Token refreshed successfully")

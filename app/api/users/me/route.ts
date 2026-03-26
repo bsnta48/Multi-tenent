@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
         }
         const res = await prisma.user.findUnique({
             where: {
-                id: user.userId,
+                id: user.id,
             },
             omit: {
                 password: true,
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
                 verifyCodeExpiry: true
             },
             include: {
-                userProfile: true
+                userProfile: true,
             }
         })
         return successResponse(res)
@@ -61,7 +61,7 @@ export async function PUT(req: NextRequest) {
 
         const res = await prisma.user.update({
             where: {
-                id: user.userId,
+                id: user.id,
             },
             data: updateData,
             omit: {

@@ -1,4 +1,6 @@
-import { Home, Users, Mail, User } from "lucide-react"
+"use client"
+
+import { Home, Users, Mail, User, Mails } from "lucide-react"
 import Link from "next/link"
 
 import {
@@ -13,9 +15,12 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { useDashboardContext } from "@/app/dashboard/layout"
+import { usePathname } from "next/navigation"
 
-export function DashboardSidebar() {
-  const { user, tenent } = useDashboardContext()
+export default function DashboardSidebar() {
+  const { me, tenent } = useDashboardContext()
+  const pathname = usePathname()
+
   return (
     <Sidebar>
       <SidebarHeader className="h-16 border-b flex flex-row items-center px-4">
@@ -23,11 +28,11 @@ export function DashboardSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>My App</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild isActive={pathname === "/dashboard"}>
                   <Link href="/dashboard">
                     <Home className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
@@ -35,16 +40,32 @@ export function DashboardSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild isActive={pathname === "/dashboard/profile"}>
                   <Link href="/dashboard/profile">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {user?.role === "admin" && <>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/dashboard/my-requests"}>
+                  <Link href="/dashboard/my-requests">
+                    <Mail className="mr-2 h-4 w-4" />
+                    <span>My Requests</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {me?.role === "admin" && <>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={pathname === "/dashboard/requests"}>
+                    <Link href="/dashboard/requests">
+                      <Mails className="mr-2 h-4 w-4" />
+                      <span>All Requests</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === "/dashboard/users"}>
                     <Link href="/dashboard/users">
                       <Users className="mr-2 h-4 w-4" />
                       <span>Users</span>
@@ -52,7 +73,7 @@ export function DashboardSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={pathname === "/dashboard/invite"}>
                     <Link href="/dashboard/invite">
                       <Mail className="mr-2 h-4 w-4" />
                       <span>Invites</span>
@@ -60,6 +81,19 @@ export function DashboardSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </>}
+            </SidebarMenu>
+          </SidebarGroupContent>
+          <SidebarGroupLabel>Team App</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/dashboard/team"}>
+                  <Link href="/dashboard/team">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>My Team</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

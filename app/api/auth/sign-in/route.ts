@@ -55,9 +55,7 @@ export async function POST(req: NextRequest) {
         const accessTokenPayload = {
             userId: user.id,
             tenentId: user.tenentId,
-            role: user.role,
-            username: user.username,
-            email: user.email
+            tokenVersion: user.tokenVersion
         }
         const refreshTokenPayload = {
             userId: user.id,

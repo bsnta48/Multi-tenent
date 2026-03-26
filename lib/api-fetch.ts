@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation"
+
 let isRefreshing = false
 let queue: ((tokenRefreshed: boolean) => void)[] = []
 
@@ -23,9 +25,7 @@ export async function apiFetch(url: string, options?: RequestInit) {
     if (!refreshRes.ok) {
       queue.forEach((cb) => cb(false))
       queue = []
-
-      window.location.href = "/sign-in"
-      return Promise.reject("Session expired")
+      await logout()
     }
 
     // ✅ notify all queued requests
@@ -43,8 +43,7 @@ export async function apiFetch(url: string, options?: RequestInit) {
   return new Promise<Response>((resolve, reject) => {
     queue.push(async (success) => {
       if (!success) {
-        reject("Session expired")
-        return
+        await logout()
       }
 
       const retry = await fetch(url, {
@@ -54,5 +53,12 @@ export async function apiFetch(url: string, options?: RequestInit) {
 
       resolve(retry)
     })
+  })
+}
+
+async function logout() {
+  await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include",
   })
 }

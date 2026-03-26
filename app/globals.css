@@ -116,6 +116,12 @@
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
+@layer utilities {
+  .gradient-primary {
+    @apply bg-linear-to-r from-neutral-900 to-neutral-700 text-white hover:from-neutral-800 hover:to-neutral-600 transition-all duration-300;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

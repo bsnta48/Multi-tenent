@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RequestStatus, RequestType } from "./types";
 
 export const usernameSchema = z.object({
     username: z.string().min(3, "Username must be at least 3 characters long").regex(/^[a-zA-Z0-9]+$/, "Username must contain only letters and numbers")
@@ -62,44 +63,48 @@ export const createInviteSchema = usernameSchema.extend({
     tenentId: z.string()
 })
 
-export interface userSchema{
+export interface userSchema {
     id: string
     tenentId: string
     username: string
     role: string
     email: string
-    userProfile: {
-        firstName: string
-        lastName: string
-        phone: string
-        dob: string
-        address: string
-        branch: string
-        department: string
-        jobTitle: string
-        jobDescription: string
-        joinDate: string
-        level: string
-        officialContact: string
-        province: string
-        servicePeriod: string
-        status: string
-        subDepartment: string
-        unit: string
-    }
+    userProfile?: {
+        firstName?: string | null
+        lastName?: string | null
+        phone?: string | null
+        dob?: string | Date | null
+        address?: string | null
+        branch?: string | null
+        department?: string | null
+        jobTitle?: string | null
+        jobDescription?: string | null
+        joinDate?: string | Date | null
+        level?: string | null
+        officialContact?: string | null
+        province?: string | null
+        servicePeriod?: string | null
+        status?: string | null
+        subDepartment?: string | null
+        unit?: string | null
+    } | null
 }
 
-export interface tenentScheme{
+export interface tenentScheme {
     id: string
     name: string
-    createdAt: string
-    updatedAt: string
+    createdAt: string | Date
+    updatedAt: string | Date
 }
 
-export type SessionPayload = {
-    userId: string
-    tenentId: string
-    role: string
-    username: string
-    email: string
-}
+export const createRequestSchema = z.object({
+    type: z.enum(RequestType),
+    event: z.string().min(3, "Event must be at least 3 characters long"),
+    description: z.string().min(3, "Description must be at least 3 characters long"),
+})
+
+export const updateRequestSchema = z.object({
+    updatedBy: z.string().optional(),
+    status: z.enum(RequestStatus),
+    replyText: z.string().optional(),
+})

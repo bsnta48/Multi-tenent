@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { apiFetch } from "@/lib/api-fetch"
+import Link from "next/link"
 import {
   Table,
   TableBody,
@@ -13,9 +14,26 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, MoreHorizontal, Trash2, Edit } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "sonner"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useDashboardContext } from "../layout"
 
 interface UserProfile {
   firstName: string | null
@@ -38,6 +56,49 @@ interface User {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; userId: string | null }>({
+    open: false,
+    userId: null,
+  })
+  const { me } = useDashboardContext()
+
+  const openDeleteConfirm = (userId: string) => {
+    setDeleteConfirm({ open: true, userId })
+  }
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirm({ open: false, userId: null })
+  }
+
+  const handleConfirmDelete = async () => {
+    const userId = deleteConfirm.userId
+    if (!userId) return
+
+    setDeleting(userId)
+    closeDeleteConfirm()
+    try {
+      const res = await apiFetch(`/api/users/${userId}`, {
+        method: "DELETE"
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) {
+          setUsers(users.filter(u => u.id !== userId))
+          toast.success("User deleted successfully")
+        } else {
+          toast.error(data.message || "Failed to delete user")
+        }
+      } else {
+        toast.error("Failed to delete user")
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      toast.error("An error occurred while deleting user")
+    } finally {
+      setDeleting(null)
+    }
+  }
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -83,6 +144,7 @@ export default function UsersPage() {
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Joined At</TableHead>
+              <TableHead className="w-12">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -129,12 +191,63 @@ export default function UsersPage() {
                     )}
                   </TableCell>
                   <TableCell>{format(new Date(user.createdAt), "PP")}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/users/${user.id}`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                        {user.id !== me?.id && <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => openDeleteConfirm(user.id)}
+                            disabled={deleting === user.id}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {deleting === user.id ? "Deleting..." : "Delete"}
+                          </DropdownMenuItem>
+                        </>}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open: boolean) => {
+        if (!open) closeDeleteConfirm()
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel onClick={closeDeleteConfirm}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

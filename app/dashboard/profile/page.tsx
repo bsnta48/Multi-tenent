@@ -1,13 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { apiFetch } from "@/lib/api-fetch"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Field, FieldGroup, FieldLabel, FieldSet, FieldError } from "@/components/ui/field"
+import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { apiFetch } from "@/lib/api-fetch"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { useDashboardContext } from "../layout"
 
 interface UserProfile {
   firstName: string | null
@@ -31,9 +33,10 @@ interface User {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  
+  const router = useRouter()
+  const { me } = useDashboardContext()
+
   // State for form
   const [username, setUsername] = useState("")
   const [firstName, setFirstName] = useState("")
@@ -46,36 +49,20 @@ export default function ProfilePage() {
   const [error, setError] = useState<any>(null)
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await apiFetch("/api/users/me")
-        if (res.ok) {
-          const result = await res.json()
-          if (result.success) {
-            const data = result.data
-            setUser(data)
-            setUsername(data.username || "")
-            setFirstName(data.userProfile?.firstName || "")
-            setLastName(data.userProfile?.lastName || "")
-            setPhone(data.userProfile?.phone || "")
-            setJobTitle(data.userProfile?.jobTitle || "")
-            setDepartment(data.userProfile?.department || "")
-            setAddress(data.userProfile?.address || "")
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch profile:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProfile()
+    setUser(me)
+    setUsername(me?.username || "")
+    setFirstName(me?.userProfile?.firstName || "")
+    setLastName(me?.userProfile?.lastName || "")
+    setPhone(me?.userProfile?.phone || "")
+    setJobTitle(me?.userProfile?.jobTitle || "")
+    setDepartment(me?.userProfile?.department || "")
+    setAddress(me?.userProfile?.address || "")
   }, [])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    
+
     try {
       const res = await apiFetch("/api/users/me", {
         method: "PUT",
@@ -107,14 +94,6 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) {
-    return <div className="p-4 lg:p-6 text-muted-foreground">Loading profile...</div>
-  }
-
-  if (!user) {
-    return <div className="p-4 lg:p-6 text-red-500">Failed to load profile.</div>
-  }
-
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6 max-w-4xl mx-auto w-full">
       <div>
@@ -132,13 +111,13 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={user.userProfile?.avatar || ""} alt={user.username} />
-              <AvatarFallback className="text-2xl">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={me?.userProfile?.avatar || ""} alt={me?.username} />
+              <AvatarFallback className="text-2xl">{me?.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="text-center">
               <p className="text-sm font-medium">{firstName && lastName ? `${firstName} ${lastName}` : username}</p>
-              <p className="text-xs text-muted-foreground">{user.email}</p>
-              <p className="text-xs text-muted-foreground mt-1 capitalize border rounded-full px-2 py-0.5 inline-block">{user.role}</p>
+              <p className="text-xs text-muted-foreground">{me?.email}</p>
+              <p className="text-xs text-muted-foreground mt-1 capitalize border rounded-full px-2 py-0.5 inline-block">{me?.role}</p>
             </div>
             {/* Future image upload can go here */}
             <Button variant="outline" size="sm" className="mt-2" disabled>Upload Image</Button>
@@ -152,7 +131,7 @@ export default function ProfilePage() {
           </CardHeader>
           <form onSubmit={handleSave}>
             <CardContent className="flex flex-col gap-4">
-              
+
               <FieldSet>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <Field>
@@ -175,7 +154,7 @@ export default function ProfilePage() {
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="email">Email Address</FieldLabel>
-                    <Input id="email" value={user.email} disabled className="bg-muted text-muted-foreground" />
+                    <Input id="email" value={me?.email} disabled className="bg-muted text-muted-foreground" />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="phone">Phone Number</FieldLabel>

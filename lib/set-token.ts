@@ -1,34 +1,43 @@
 "use server"
 
-import { createToken } from "./auth"
+import { createAccessToken, createRefreshToken } from "./auth"
 import { cookies } from "next/headers"
 import { RefreshTokenPayload, TokenPayload } from "./types"
 import { prisma } from "./prisma"
+import { hashToken } from "./utils"
 
-export default async function setToken(tokenName: string, tokenPayload: TokenPayload | RefreshTokenPayload) {
-    const token = await createToken(tokenPayload as TokenPayload)
+export default async function setToken(
+    tokenName: string,
+    tokenPayload: TokenPayload | RefreshTokenPayload
+) {
+    const isRefresh = (tokenPayload as RefreshTokenPayload).type === "refresh"
+
+    const token = isRefresh
+        ? await createRefreshToken(tokenPayload as RefreshTokenPayload)
+        : await createAccessToken(tokenPayload as TokenPayload)
+
     const cookiesStore = await cookies()
-    const oneDayExpiry = new Date(Date.now() + 60 * 60 * 24 * 1000)
-    const longTermExpiry = new Date(Date.now() + 60 * 60 * 24 * 7 * 1000)
-    const isRememberMe = (tokenPayload as RefreshTokenPayload).rememberMe
-    const isTypeRefresh = (tokenPayload as RefreshTokenPayload).type === "refresh"
+
     cookiesStore.set(tokenName, token, {
         httpOnly: true,
         secure: true,
         sameSite: "strict",
         path: "/",
-        ...(isTypeRefresh
-            ? { expires: isRememberMe ? longTermExpiry : undefined }
-            : { maxAge: 60 * 15 }
+        ...(isRefresh
+            ? { expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
+            : { maxAge: 60 * 15 } // 15 min
         )
     })
-    if (isTypeRefresh) {
+
+    if (isRefresh) {
+        const tokenHash = await hashToken(token) // 🔥 important
+
         await prisma.refreshToken.create({
             data: {
-                token: token,
+                token: tokenHash,
                 userId: tokenPayload.userId,
                 deviceName: (tokenPayload as RefreshTokenPayload).deviceName,
-                expiresAt: isRememberMe ? longTermExpiry : oneDayExpiry
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             }
         })
     }

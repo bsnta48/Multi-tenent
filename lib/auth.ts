@@ -8,20 +8,31 @@ import { prisma } from "./prisma"
 const secretKey = process.env.SESSION_SECRET
 const encodedKey = new TextEncoder().encode(secretKey)
 
-export async function createToken(payload: TokenPayload) {
-    return new SignJWT(payload)
+export async function createAccessToken(payload: TokenPayload) {
+    return new SignJWT({ ...payload, type: "access" })
         .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt(new Date())
+        .setIssuedAt()
+        .setExpirationTime('15m') // ✅ short-lived
+        .sign(encodedKey)
+}
+
+export async function createRefreshToken(payload: RefreshTokenPayload) {
+    return new SignJWT({ ...payload, type: "refresh" })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
         .setExpirationTime('7d')
         .sign(encodedKey)
 }
 
-export async function verifyToken(token: string): Promise<TokenPayload | RefreshTokenPayload> {
+export async function verifyToken(token: string, type: "access" | "refresh") {
     try {
-        const { payload } = await jwtVerify(token, encodedKey, {
-            algorithms: ['HS256']
-        })
-        return payload as TokenPayload | RefreshTokenPayload
+        const { payload } = await jwtVerify(token, encodedKey)
+
+        if (payload.type !== type) {
+            throw new Error("Invalid token type")
+        }
+
+        return payload as any
     } catch {
         throw new Error("Invalid token")
     }
@@ -30,14 +41,35 @@ export async function verifyToken(token: string): Promise<TokenPayload | Refresh
 export async function verifyUser() {
     const cookieStore = await cookies()
     const accessToken = cookieStore.get("accessToken")?.value
-    if (!accessToken) {
+
+    if (!accessToken) return null
+
+    let payload: TokenPayload
+
+    try {
+        payload = await verifyToken(accessToken, "access")
+    } catch {
         return null
     }
-    const user = await verifyToken(accessToken)
-    if (!user.userId) {
+
+    const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: {
+            id: true,
+            tenentId: true,
+            role: true,
+            tokenVersion: true
+        }
+    })
+
+    if (!user) return null
+
+    // 🔥 token version check (optional but recommended)
+    if (payload.tokenVersion !== user.tokenVersion) {
         return null
     }
-    return user as TokenPayload
+
+    return user
 }
 
 export async function isValidInvite(token: string) {
