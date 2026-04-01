@@ -1,7 +1,7 @@
 "use client"
 
-import { signOut } from "@/app/actions/auth";
-import { useDashboardContext } from "@/app/dashboard/layout";
+import { signOut } from "@/lib/modules/auth/auth.actions";
+import { useDashboardContext } from "@/app/dashboard/context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

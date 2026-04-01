@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { errorResponse, validationError, successResponse } from "@/lib/api-response";
 import { resetPasswordSchema } from "@/lib/schema";
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs"
+import { userService } from "@/lib/modules/user/user.service";
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,12 +11,10 @@ export async function POST(req: NextRequest) {
         if (!token) {
             return errorResponse("Token is invalid", 400)
         }
-        const user = await prisma.user.findFirst({
-            where: {
-                verifyCode: token,
-                verifyCodeExpiry: {
-                    gt: new Date()
-                }
+        const user = await userService.findByQuery({
+            verifyCode: token,
+            verifyCodeExpiry: {
+                gt: new Date()
             }
         })
         if (!user) {
@@ -27,15 +25,11 @@ export async function POST(req: NextRequest) {
             return validationError(validate.error)
         }
         const hashedPassword = await bcrypt.hash(password, 10)
-        await prisma.user.update({
-            where: {
-                id: user.id
-            },
-            data: {
-                password: hashedPassword,
-                verifyCode: null,
-                verifyCodeExpiry: null
-            }
+        await userService.update({
+            id: user.id,
+            password: hashedPassword,
+            verifyCode: null,
+            verifyCodeExpiry: null
         })
         return successResponse({}, "Password reset successfully")
 

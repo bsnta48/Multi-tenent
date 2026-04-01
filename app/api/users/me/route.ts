@@ -3,6 +3,7 @@ import { verifyUser } from "@/lib/auth"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { usernameSchema } from "@/lib/schema"
+import { userService } from "@/lib/modules/user/user.service"
 
 export async function GET(req: NextRequest) {
     try {
@@ -10,19 +11,7 @@ export async function GET(req: NextRequest) {
         if (!user) {
             return errorResponse("Unauthorized", 401)
         }
-        const res = await prisma.user.findUnique({
-            where: {
-                id: user.id,
-            },
-            omit: {
-                password: true,
-                verifyCode: true,
-                verifyCodeExpiry: true
-            },
-            include: {
-                userProfile: true,
-            }
-        })
+        const res = await userService.get(user.id)
         return successResponse(res)
     } catch (error) {
         return errorResponse(`Internal server error: ${error}`, 500)
@@ -59,19 +48,9 @@ export async function PUT(req: NextRequest) {
             }
         }
 
-        const res = await prisma.user.update({
-            where: {
-                id: user.id,
-            },
-            data: updateData,
-            omit: {
-                password: true,
-                verifyCode: true,
-                verifyCodeExpiry: true
-            },
-            include: {
-                userProfile: true
-            }
+        const res = await userService.update({
+            id: user.id,
+            ...updateData
         })
         return successResponse(res, "Profile updated successfully")
     } catch (error) {

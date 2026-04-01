@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useDashboardContext } from "@/app/dashboard/layout"
+import { useDashboardContext } from "@/app/dashboard/context"
 import { usePathname } from "next/navigation"
 
 export default function DashboardSidebar() {

@@ -1,8 +1,8 @@
 "use client"
 
-import { verifyEmail } from "@/app/actions/auth"
+import { verifyEmailAction } from "@/lib/modules/auth/auth.actions"
 import { Button } from "@/components/ui/button"
-import { Card, CardAction, CardDescription, CardHeader } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -12,7 +12,7 @@ export default function VerifyEmail() {
     const params = useParams()
     const token = params.token as string
     const verify = async () => {
-        const res = await verifyEmail(token)
+        const res = await verifyEmailAction(token)
         setState(res)
     }
     useEffect(() => {
@@ -21,13 +21,16 @@ export default function VerifyEmail() {
     return (
         <Card className="w-full max-w-lg mx-auto">
             <CardHeader>
-                <CardDescription>{state.message}</CardDescription>
+                <CardDescription>{state?.message}</CardDescription>
                 <CardAction>
                     <Button variant="link" asChild>
                         <Link href="/sign-in">Sign In</Link>
                     </Button>
                 </CardAction>
             </CardHeader>
+            <CardContent>
+                <Button onClick={verify}>Resend Verification Email</Button>
+            </CardContent>
         </Card>
     )
 }

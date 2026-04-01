@@ -1,27 +1,22 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { verifyUser } from './lib/auth';
 
 const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/verify-token", "/forgot-password", "/reset-password"];
-const ADMIN_ROUTES = ["/dashboard/users", "/dashboard/invite", "/dashboard/users/[id]", "/dashboard/requests"];
+const ADMIN_ROUTES = ["/dashboard/users", "/dashboard/invite", "/dashboard/users/[id]", "/dashboard/requests", "/dashboard/team"];
 const PROTECTED_ROUTES = ["/dashboard", ...ADMIN_ROUTES];
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const refreshToken = request.cookies.get("refreshToken")?.value
+    const accessToken = request.cookies.get("accessToken")?.value
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
     const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route))
-    const user = await verifyUser()
 
-    if ((user?.id || refreshToken) && isAdminRoute && user?.role !== "admin") {
+    if (isPublicRoute && accessToken && refreshToken) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    if ((user?.id || refreshToken) && isPublicRoute) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-
-    if (!user?.id && !refreshToken && isProtectedRoute) {
+    if (!accessToken && !refreshToken && isProtectedRoute) {
         return NextResponse.redirect(new URL('/sign-in', request.url))
     }
 

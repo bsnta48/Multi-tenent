@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useDashboardContext } from "../layout"
+import { useDashboardContext } from "../context"
 
 interface UserProfile {
   firstName: string | null

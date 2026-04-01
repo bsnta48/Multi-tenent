@@ -1,11 +1,12 @@
 import { errorResponse, successResponse, validationError } from "@/lib/api-response";
 import { NextRequest } from "next/server";
-import { verifyUser } from "@/lib/auth";
+import { verifyUser } from "@/lib/modules/auth/auth.service";
 import { inviteSchema } from "@/lib/schema";
 import { generateEmailToken, protocol, rootDomain } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { sendInviteLink } from "@/lib/send-email";
 import { NextResponse } from "next/server";
+import { inviteService } from "@/lib/modules/invite/invite.service";
 
 export async function POST(req: NextRequest) {
     try {
@@ -50,21 +51,12 @@ export async function POST(req: NextRequest) {
             }, { status: 400 })
         }
         const inviteToken = generateEmailToken()
-        const invites = await prisma.invite.upsert({
-            where: {
-                email
-            },
-            update: {
-                token: inviteToken,
-                expireAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
-            },
-            create: {
-                email,
-                token: inviteToken,
-                expireAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
-                role,
-                tenentId: user.tenentId,
-            }
+        const invites = await inviteService.create({
+            email,
+            token: inviteToken,
+            expireAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+            role,
+            tenentId: user.tenentId
         })
         const url = `${protocol}://${rootDomain}/invite/${inviteToken}`
         await sendInviteLink(email, url)

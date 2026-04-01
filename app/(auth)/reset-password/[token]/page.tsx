@@ -1,7 +1,7 @@
 "use client"
 
-import { resetPassword } from "@/app/actions/auth"
-import FieldsError from "@/components/FieldsError"
+import { resetPassword } from "@/app/actions/auth/auth.actions"
+import FieldsError from "@/components/FieldErrors"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet, FieldSeparator } from "@/components/ui/field"

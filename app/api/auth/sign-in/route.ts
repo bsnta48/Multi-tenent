@@ -1,8 +1,6 @@
 import { errorResponse, successResponse, validationError } from "@/lib/api-response"
-import { prisma } from "@/lib/prisma"
+import { authenticateUser, setToken } from "@/lib/modules/auth/auth.service"
 import { signInSchema } from "@/lib/schema"
-import setToken from "@/lib/set-token"
-import bcrypt from "bcryptjs"
 import { NextRequest } from "next/server"
 import { UAParser } from "ua-parser-js"
 
@@ -25,40 +23,23 @@ export async function POST(req: NextRequest) {
         const { email, password } = validate.data
 
         /**
-         * Find user by email
+         * Authenticate user
          */
-        const user = await prisma.user.findUnique({
-            where: { email }
-        })
-        if (!user) {
-            return errorResponse("Email address or password is not correct", 400)
-        }
-
-        /**
-         * Check user is verified
-         */
-        if (!user.verified) {
-            return errorResponse("Email address is not verified, please verify your email address.", 400)
-        }
-
-        /**
-         * Check is password valid
-         */
-        const isPasswordValid = await bcrypt.compare(password, user.password)
-        if (!isPasswordValid) {
-            return errorResponse("Email address or password is not correct", 400)
+        const authenticate = await authenticateUser(email, password)
+        if(!authenticate){
+            return errorResponse("Email or password is not correct", 400)
         }
 
         /**
          * Set cookies in http
          */
         const accessTokenPayload = {
-            userId: user.id,
-            tenentId: user.tenentId,
-            tokenVersion: user.tokenVersion
+            userId: authenticate.id,
+            tenentId: authenticate.tenentId,
+            tokenVersion: authenticate.tokenVersion
         }
         const refreshTokenPayload = {
-            userId: user.id,
+            userId: authenticate.id,
             type: "refresh",
             deviceName,
             rememberMe: data.rememberMe

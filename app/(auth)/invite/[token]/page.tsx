@@ -1,7 +1,7 @@
 "use client"
 
-import { acceptInvite } from "@/app/actions/auth";
-import FieldsError from "@/components/FieldsError";
+import { acceptInvite } from "@/app/actions/auth/auth.actions";
+import FieldsError from "@/components/FieldErrors";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSeparator, FieldSet } from "@/components/ui/field";

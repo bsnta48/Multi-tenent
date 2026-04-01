@@ -1,6 +1,6 @@
 "use client"
 
-import { useDashboardContext } from "@/app/dashboard/layout"
+import { useDashboardContext } from "@/app/dashboard/context"
 import { Button } from "@/components/ui/button"
 import {
     Table,
@@ -134,7 +134,7 @@ export default function RequestsPage() {
         try {
             const res = await apiFetch(`/api/requests/${id}`, {
                 method: "PATCH",
-                body: JSON.stringify({ status: "canceled", updatedBy: `${me.userProfile.firstName || me.username}, ${me.email}` })
+                body: JSON.stringify({ status: "canceled", updatedBy: me ? `${me.userProfile?.firstName || me.username}, ${me.email}` : "System" })
             })
 
             if (res.ok) {
@@ -219,8 +219,6 @@ export default function RequestsPage() {
             </Table>
         </div>
     )
-
-    console.log(selectedRequest?.updatedAt)
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">

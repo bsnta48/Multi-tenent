@@ -1,10 +1,11 @@
 import { errorResponse, successResponse } from "@/lib/api-response";
-import { prisma } from "@/lib/prisma";
+import { verifyToken } from "@/lib/modules/auth/auth.service";
 import setToken from "@/lib/set-token";
 import { TokenPayload } from "@/lib/types";
 import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
 import { hashToken } from "@/lib/utils";
+import { refreshService } from "@/lib/modules/refresh/refresh.service";
+import { userService } from "@/lib/modules/user/user.service";
 
 export async function POST() {
     try {
@@ -15,33 +16,13 @@ export async function POST() {
         }
         await verifyToken(refreshToken, "refresh")
         const tokenHash = hashToken(refreshToken)
-        const user = await prisma.refreshToken.findUnique({
-            where: {
-                token: tokenHash
-            }
-        })
+        const user = await refreshService.get(tokenHash)
         const currentDate = new Date()
         if (!user || user.expiresAt < currentDate) {
-            await prisma.refreshToken.delete({
-                where: {
-                    token: tokenHash
-                }
-            })
+            await refreshService.drop(tokenHash)
             return errorResponse("Invalid token", 401)
         }
-        const findUser = await prisma.user.findUnique({
-            where: {
-                id: user.userId
-            },
-            select: {
-                id: true,
-                tenentId: true,
-                username: true,
-                role: true,
-                email: true,
-                tokenVersion: true
-            }
-        })
+        const findUser = await userService.get(user.userId)
         if (!findUser) {
             return errorResponse("User not found", 404)
         }

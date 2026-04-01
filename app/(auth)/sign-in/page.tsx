@@ -1,20 +1,22 @@
 "use client"
 
-import { useActionState, useState } from "react"
-import { signIn } from "@/app/actions/auth"
-import FieldsError from "@/components/FieldsError"
+import { signIn } from "@/lib/modules/auth/auth.actions"
+import FieldErrors from "@/components/FieldErrors"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { useActionState } from "react"
 
 export default function SignInPage() {
     const [state, formAction, isPending] = useActionState(signIn, undefined)
+    const fieldErrors = state?.error && typeof state.error === "object" ? (state.error as Record<string, string[]>) : {}
     return (
         <Card className="w-full max-w-lg mx-auto">
             <CardHeader>
-                <CardTitle className="text-2xl font-bold mb-4">Create your account</CardTitle>
+                <CardTitle className="text-2xl font-bold mb-4">Sign in your account</CardTitle>
                 <CardDescription></CardDescription>
                 <CardAction>
                     <Button variant="link" asChild>
@@ -26,16 +28,20 @@ export default function SignInPage() {
                 <CardContent>
                     <FieldSet>
                         <FieldGroup>
-                            {!state?.success && <FieldError>{state?.message}</FieldError>}
+                            {!state?.success && state?.message && <FieldError>{state?.message}</FieldError>}
                             <Field>
                                 <FieldLabel htmlFor="email">Email</FieldLabel>
-                                <Input defaultValue={state?.data?.email} id="email" name="email" aria-invalid={!!state?.error?.email?.errors[0]} />
-                                <FieldsError errors={state?.error?.email?.errors} />
+                                <Input defaultValue={(state?.data?.email as string) || ""} id="email" name="email" aria-invalid={!!fieldErrors?.email} />
+                                {fieldErrors?.email && <FieldErrors errors={fieldErrors?.email || []} />}
                             </Field>
                             <Field>
                                 <FieldLabel htmlFor="password">Password</FieldLabel>
-                                <Input type="password" defaultValue={state?.data?.password} id="password" name="password" aria-invalid={!!state?.error?.password?.errors[0]} />
-                                <FieldsError errors={state?.error?.password?.errors} />
+                                <Input type="password" defaultValue={(state?.data?.password as string) || ""} id="password" name="password" aria-invalid={!!fieldErrors?.password} />
+                                {fieldErrors?.password && <FieldErrors errors={fieldErrors?.password || []} />}
+                            </Field>
+                            <Field orientation="horizontal">
+                                <Checkbox defaultChecked={state?.data?.rememberMe === "on"} id="rememberMe" name="rememberMe" />
+                                <FieldLabel htmlFor="rememberMe">Remember Me</FieldLabel>
                             </Field>
                         </FieldGroup>
                     </FieldSet>

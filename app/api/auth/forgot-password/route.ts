@@ -1,7 +1,7 @@
 import { errorResponse, successResponse, validationError } from "@/lib/api-response";
-import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema } from "@/lib/schema";
 import { sendForgotPasswordEmail } from "@/lib/send-email";
+import { userService } from "@/lib/modules/user/user.service";
 import { generateEmailToken, protocol, rootDomain } from "@/lib/utils";
 
 export async function POST(req: Request) {
@@ -12,24 +12,18 @@ export async function POST(req: Request) {
             return validationError(validate.error)
         }
         const { email } = validate.data
-        const user = await prisma.user.findUnique({
-            where: {
-                email
-            }
+        const user = await userService.findByQuery({
+            email
         })
         if (!user) {
             return errorResponse("User not found", 404)
         }
         const verifyCodeExpiry = new Date(Date.now() + 10 * 60 * 1000)
         const generateVerifyToken = generateEmailToken()
-        await prisma.user.update({
-            where: {
-                id: user.id
-            },
-            data: {
-                verifyCode: generateVerifyToken,
-                verifyCodeExpiry
-            }
+        await userService.update({
+            id: user.id,
+            verifyCode: generateVerifyToken,
+            verifyCodeExpiry
         })
         const verifyUrl = `${protocol}://${rootDomain}/reset-password/${generateVerifyToken}`;
         await sendForgotPasswordEmail(email, user.username, verifyUrl)

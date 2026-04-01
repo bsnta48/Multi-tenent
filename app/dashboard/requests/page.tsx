@@ -1,6 +1,6 @@
 "use client"
 
-import { useDashboardContext } from "@/app/dashboard/layout"
+import { useDashboardContext } from "@/app/dashboard/context"
 import { Button } from "@/components/ui/button"
 import {
     Table,
@@ -95,7 +95,7 @@ export default function AllRequestsPage() {
                 body: JSON.stringify({
                     status: targetStatus,
                     replyText,
-                    updatedBy: `${me.userProfile.firstName || me.username}, ${me.email}`
+                    updatedBy: me ? `${me.userProfile?.firstName || me.username}, ${me.email}` : "System"
                 })
             })
 

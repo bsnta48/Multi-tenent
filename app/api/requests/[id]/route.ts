@@ -3,6 +3,7 @@ import { verifyUser } from "@/lib/auth";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateRequestSchema } from "@/lib/schema";
+import { requestService } from "@/lib/modules/requests/request.service";
 
 export async function GET(req: NextRequest, ctx: RouteContext<'/api/requests/[id]'>) {
     try {
@@ -16,9 +17,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/requests/[id
             return errorResponse("Request ID is required", 400)
         }
 
-        const requests = prisma.request.findMany({
-            where: { userId: id }
-        })
+        const requests = requestService.getByUser(id)
 
         return successResponse(requests, "Requests fetched successfully")
 
@@ -39,9 +38,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/requests/[
             return errorResponse("Request ID is required", 400)
         }
 
-        const existingRequest = await prisma.request.findUnique({
-            where: { id }
-        })
+        const existingRequest = await requestService.get(id)
 
         if (!existingRequest) {
             return errorResponse("Request not found", 404)
@@ -68,9 +65,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/requests/[
                 return errorResponse("Only pending requests can be canceled", 400)
             }
         }
-        const request = await prisma.request.update({
-            where: { id },
-            data: validate.data
+        const request = await requestService.update({
+            id,
+            ...validate.data
         })
         return successResponse(request, "Request updated successfully")
     } catch (error) {

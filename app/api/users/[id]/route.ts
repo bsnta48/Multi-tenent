@@ -3,6 +3,7 @@ import { errorResponse, successResponse, validationError } from "@/lib/api-respo
 import { prisma } from "@/lib/prisma";
 import { verifyUser } from "@/lib/auth";
 import { usernameSchema } from "@/lib/schema";
+import { userService } from "@/lib/modules/user/user.service";
 
 
 export async function GET(req: NextRequest, ctx: RouteContext<'/api/users/[id]'>) {
@@ -15,24 +16,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/users/[id]'>
         if (!id) {
             return errorResponse("User ID is required", 400)
         }
-        const userData = await prisma.user.findUnique({
-            where: {
-                id
-            },
-            omit: {
-                verifyCode: true,
-                verifyCodeExpiry: true,
-                password: true,
-            },
-            include: {
-                userProfile: {
-                    omit: {
-                        id: true,
-                        userId: true,
-                    }
-                }
-            }
-        })
+        const userData = await userService.get(id)
         if (!userData) {
             return errorResponse("User not found", 404)
         }
@@ -65,9 +49,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext<'/api/users/[id]'>
         }
 
         // Check if user exists
-        const existingUser = await prisma.user.findUnique({
-            where: { id }
-        })
+        const existingUser = await userService.get(id)
 
         if (!existingUser) {
             return errorResponse("User not found", 404)
@@ -78,45 +60,30 @@ export async function PUT(req: NextRequest, ctx: RouteContext<'/api/users/[id]'>
         }
 
         // Update user data
-        const updatedUser = await prisma.user.update({
-            where: { id },
-            data: {
-                ...(username && { username }),
-                ...(role && { role, tokenVersion: { increment: 1 } }),
-                userProfile: userProfile ? {
-                    upsert: {
-                        create: {
-                            firstName: userProfile.firstName || null,
-                            lastName: userProfile.lastName || null,
-                            phone: userProfile.phone || null,
-                            address: userProfile.address || null,
-                            jobTitle: userProfile.jobTitle || null,
-                            department: userProfile.department || null,
-                        },
-                        update: {
-                            firstName: userProfile.firstName || null,
-                            lastName: userProfile.lastName || null,
-                            phone: userProfile.phone || null,
-                            address: userProfile.address || null,
-                            jobTitle: userProfile.jobTitle || null,
-                            department: userProfile.department || null,
-                        }
-                    }
-                } : undefined
-            },
-            omit: {
-                verifyCode: true,
-                verifyCodeExpiry: true,
-                password: true,
-            },
-            include: {
-                userProfile: {
-                    omit: {
-                        id: true,
-                        userId: true,
+        const updatedUser = await userService.update({
+            id,
+            ...(username && { username }),
+            ...(role && { role, tokenVersion: { increment: 1 } }),
+            userProfile: userProfile ? {
+                upsert: {
+                    create: {
+                        firstName: userProfile.firstName || null,
+                        lastName: userProfile.lastName || null,
+                        phone: userProfile.phone || null,
+                        address: userProfile.address || null,
+                        jobTitle: userProfile.jobTitle || null,
+                        department: userProfile.department || null,
+                    },
+                    update: {
+                        firstName: userProfile.firstName || null,
+                        lastName: userProfile.lastName || null,
+                        phone: userProfile.phone || null,
+                        address: userProfile.address || null,
+                        jobTitle: userProfile.jobTitle || null,
+                        department: userProfile.department || null,
                     }
                 }
-            }
+            } : undefined
         })
 
         return successResponse(updatedUser, "User updated successfully", 200)
@@ -143,23 +110,14 @@ export async function DELETE(req: NextRequest, ctx: RouteContext<'/api/users/[id
         }
 
         // Check if user exists
-        const existingUser = await prisma.user.findUnique({
-            where: { id }
-        })
+        const existingUser = await userService.get(id)
 
         if (!existingUser) {
             return errorResponse("User not found", 404)
         }
 
         // Delete the user
-        await prisma.user.delete({
-            where: { id, role: { not: 'admin' } },
-        })
-
-        // Delete user's profile first (if it exists)
-        await prisma.userProfile.deleteMany({
-            where: { userId: id }
-        })
+        await userService.drop(id)
 
         return successResponse(null, "User deleted successfully", 200)
     } catch (error) {

@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
-import { useDashboardContext } from "@/app/dashboard/layout"
+import { useDashboardContext } from "@/app/dashboard/context"
 
 interface UserProfile {
   firstName: string | null

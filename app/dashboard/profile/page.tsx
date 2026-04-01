@@ -9,7 +9,7 @@ import { apiFetch } from "@/lib/api-fetch"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { useDashboardContext } from "../layout"
+import { useDashboardContext } from "../context"
 
 interface UserProfile {
   firstName: string | null

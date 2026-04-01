@@ -1,7 +1,7 @@
 import { errorResponse, successResponse } from "@/lib/api-response";
 import { verifyUser } from "@/lib/auth";
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { requestService } from "@/lib/modules/requests/request.service";
 
 export async function GET(req: NextRequest, ctx: RouteContext<'/api/users/[id]/requests'>) {
     try {
@@ -15,9 +15,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/users/[id]/r
             return errorResponse("Request ID is required", 400)
         }
 
-        const requests = prisma.request.findMany({
-            where: { userId: id }
-        })
+        const requests = requestService.getByUser(id)
 
         return successResponse(requests, "Requests fetched successfully")
 

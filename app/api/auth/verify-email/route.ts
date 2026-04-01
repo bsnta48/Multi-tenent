@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
 import { errorResponse, successResponse } from "@/lib/api-response";
-import { prisma } from "@/lib/prisma";
+import { userService } from "@/lib/modules/user/user.service";
+import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         if (!data.verifyToken) {
             return errorResponse("Token is required", 400)
         }
-        const user = await prisma.user.findFirst({
+        const user = await userService.findByQuery({
             where: {
                 verifyCode: data.verifyToken,
                 verifyCodeExpiry: {
@@ -19,15 +19,11 @@ export async function POST(req: NextRequest) {
         if (!user) {
             return errorResponse("Invalid code or expired code", 401)
         }
-        await prisma.user.update({
-            where: {
-                id: user.id
-            },
-            data: {
-                verified: true,
-                verifyCode: null,
-                verifyCodeExpiry: null
-            }
+        await userService.update({
+            id: user.id,
+            verified: true,
+            verifyCode: null,
+            verifyCodeExpiry: null
         })
         return successResponse({}, "Email verified successfully")
     } catch (error) {

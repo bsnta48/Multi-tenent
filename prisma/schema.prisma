@@ -11,11 +11,15 @@ datasource db {
 }
 
 model Tenent {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User[]
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  logo        String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+  requests    Request[]
 }
 
 model User {
@@ -97,4 +101,6 @@ model Request {
   updatedBy   String?
   user        User     @relation(fields: [userId], references: [id])
   userId      String
+  tenent      Tenent   @relation(fields: [tenentId], references: [id])
+  tenentId    String
 }

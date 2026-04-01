@@ -3,6 +3,8 @@ import { isValidInvite } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createTenentSchema, createInviteSchema } from "@/lib/schema"
 import { sendVerificationEmail } from "@/lib/send-email"
+import { tenentService } from "@/lib/modules/tenents/tenent.service"
+import { userService } from "@/lib/modules/user/user.service"
 import { generateEmailToken, protocol, rootDomain } from "@/lib/utils"
 import bcrypt from "bcryptjs"
 import { NextRequest } from "next/server"
@@ -24,39 +26,25 @@ export async function POST(request: NextRequest) {
                 return errorResponse("Invite not found or expired", 404)
             }
             const [usernameExist, emailExist] = await Promise.all([
-                prisma.user.findUnique({
-                    where: { username }
+                userService.findByQuery({
+                    username
                 }),
-                prisma.user.findUnique({
-                    where: { email, tenentId }
+                userService.findByQuery({
+                    email,
+                    tenentId
                 })
             ])
             if (usernameExist || emailExist) {
                 return errorResponse("Username or Email already exist", 400)
             }
             const hashedPassword = await bcrypt.hash(password, 10)
-            const user = await prisma.user.create({
-                data: {
-                    username,
-                    email,
-                    password: hashedPassword,
-                    role,
-                    tenentId,
-                    verified: true,
-                    userProfile: {
-                        create: {
-                            firstName: "",
-                            lastName: "",
-                        }
-                    }
-                },
-                select: {
-                    id: true,
-                    username: true,
-                    email: true,
-                    role: true,
-                    verified: true,
-                }
+            const user = await userService.create({
+                username,
+                email,
+                password: hashedPassword,
+                role,
+                tenentId,
+                verified: true,
             })
             await prisma.invite.update({
                 where: {
@@ -81,16 +69,20 @@ export async function POST(request: NextRequest) {
         /**
          * Check the user has already exist
          */
-        const [usernameExist, emailExist] = await Promise.all([
-            prisma.user.findUnique({
-                where: { username }
+        const slug = organizationName.toLowerCase().replace(/\s+/g, '-')
+        const [slugExist, usernameExist, emailExist] = await Promise.all([
+            tenentService.findByQuery({
+                where: { slug }
             }),
-            prisma.user.findUnique({
-                where: { email }
+            userService.findByQuery({
+                username
+            }),
+            userService.findByQuery({
+                email
             })
         ])
-        if (usernameExist || emailExist) {
-            return errorResponse("Username or email already exists", 400, rest)
+        if (slugExist || usernameExist || emailExist) {
+            return errorResponse("Organization name or username or email already exists", 400, rest)
         }
 
         /**
@@ -107,36 +99,26 @@ export async function POST(request: NextRequest) {
          * Create tenent and user
          */
         const generateVerifyToken = generateEmailToken()
-        const tenent = await prisma.tenent.create({
-            data: {
-                name: organizationName,
-                users: {
-                    create: {
-                        username,
-                        email,
-                        password: hashedPassword,
-                        role: "admin",
-                        verifyCode: generateVerifyToken,
-                        verifyCodeExpiry,
-                        userProfile: {
-                            create: {
-                                firstName: "",
-                                lastName: ""
-                            }
+        const tenent = await tenentService.create({
+            name: organizationName,
+            slug,
+            logo: "",
+            description: "",
+            users: {
+                create: {
+                    username,
+                    email,
+                    password: hashedPassword,
+                    role: "admin",
+                    verifyCode: generateVerifyToken,
+                    verifyCodeExpiry,
+                    userProfile: {
+                        create: {
+                            firstName: "",
+                            lastName: ""
                         }
                     }
                 }
-            },
-            include: {
-                users: {
-                    select: {
-                        id: true,
-                        username: true,
-                        email: true,
-                        role: true,
-                        verified: true,
-                    }
-                },
             }
         })
 
